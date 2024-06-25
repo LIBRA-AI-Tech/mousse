@@ -1,0 +1,62 @@
+volumes:
+  redis:
+
+services:
+  redisai:
+    restart: unless-stopped 
+    image: redislabs/redisai:1.2.6-cpu-bionic
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    volumes:
+      - redis:/data
+
+  setup-redis:
+    build:
+      context: ./backend
+      target: "redis-setup"
+    depends_on:
+      redisai:
+        condition: service_healthy
+    command: >
+      bash -c '
+        /usr/local/bin/modelstore;
+        if [ $? -ne 0 ]; then
+          echo "Storing model into RedisAI failed!";
+          exit 1;
+        fi;
+        echo "All done!";
+      '
+    volumes:
+      - type: bind
+        source: ${MODEL_PATH}
+        target: /var/local/model
+        read_only: true
+    environment:
+      - MODEL_PATH=/var/local/model
+      - MODEL_NAME=${MODEL_NAME}
+      - MODEL_TAG=${MODEL_TAG}
+      - REDIS_HOST=redisai
+      - REDIS_PORT=6379
+
+  api:
+    restart: unless-stopped
+    depends_on:
+      redisai:
+        condition: service_healthy
+      setup-redis:
+        condition: service_completed_successfully
+    image: "mousse/search-service:${VERSION}"
+    build:
+      context: ./backend
+      target: production
+      args:
+        VERSION: "${VERSION}"
+    ports:
+      - "${API_PORT}:8000"
+    environment:
+      - REDIS_HOST=redisai
+      - REDIS_PORT=6379
+      - ROOT_PATH=${ROOT_PATH:-}
