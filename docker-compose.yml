@@ -1,4 +1,5 @@
 volumes:
+  postgres_data:
 
 services:
   triton:
@@ -36,5 +37,26 @@ services:
       - "${API_PORT}:8000"
     environment:
       - ROOT_PATH=${ROOT_PATH:-}
+      - DB_URI=postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_USER_PASS}@db:5432/${POSTGRES_DB}
     volumes:
+      - ./data:/var/local/data:ro
       - ./model-repository:/var/local/models:ro
+
+  db:
+    image: "mousse/postgres:16.4-postgis-pgvector"
+    build:
+      context: ./postgresql
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER}
+      POSTGRES_APP_USER_PASS: ${POSTGRES_APP_USER_PASS}
+      POSTGRES_APP_SCHEMA: core
+      RUN_AS_ROOT: false
+    healthcheck:
+      test: "PGPASSWORD=${POSTGRES_PASSWORD} pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB}"
