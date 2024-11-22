@@ -1,53 +1,31 @@
 volumes:
-  redis:
 
 services:
-  redisai:
-    restart: unless-stopped 
-    image: redislabs/redisai:1.2.6-cpu-bionic
+  triton:
+    restart: unless-stopped
+    image: nvcr.io/nvidia/tritonserver:24.08-py3
+    volumes:
+      - ./model-repository:/models
+    command: [
+      "tritonserver",
+      "--model-repository=/models",
+    ]
+    ports:
+      - "8000:8000" # HTTP port
+      - "8001:8001" # gRPC port
+      - "8002:8002" # Metrics port
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-      interval: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 30s
       timeout: 10s
-      retries: 120
-    volumes:
-      - redis:/data
-
-  setup-redis:
-    build:
-      context: ./backend
-      target: "redis-setup"
-    depends_on:
-      redisai:
-        condition: service_healthy
-    command: >
-      bash -c '
-        /usr/local/bin/modelstore;
-        if [ $? -ne 0 ]; then
-          echo "Storing model into RedisAI failed!";
-          exit 1;
-        fi;
-        echo "All done!";
-      '
-    volumes:
-      - type: bind
-        source: ${MODEL_PATH}
-        target: /var/local/model
-        read_only: true
-    environment:
-      - MODEL_PATH=/var/local/model
-      - MODEL_NAME=${MODEL_NAME}
-      - MODEL_TAG=${MODEL_TAG}
-      - REDIS_HOST=redisai
-      - REDIS_PORT=6379
+      retries: 5
+      start_period: 30s
 
   api:
     restart: unless-stopped
     depends_on:
-      redisai:
+      triton:
         condition: service_healthy
-      setup-redis:
-        condition: service_completed_successfully
     image: "mousse/search-service:${VERSION}"
     build:
       context: ./backend
@@ -57,6 +35,6 @@ services:
     ports:
       - "${API_PORT}:8000"
     environment:
-      - REDIS_HOST=redisai
-      - REDIS_PORT=6379
       - ROOT_PATH=${ROOT_PATH:-}
+    volumes:
+      - ./model-repository:/var/local/models:ro

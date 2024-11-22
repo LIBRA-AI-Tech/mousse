@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bookworm as build-stage-1
+FROM python:3.10-slim-bookworm AS build-stage-1
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NOWARNINGS="yes"
@@ -14,7 +14,7 @@ RUN pip3 --no-cache-dir install --upgrade pip wheel && \
     pip3 --no-cache-dir install --prefix=/usr/local -r requirements.txt
 
 # BASE Image
-FROM python:3.10-slim-bookworm as base
+FROM python:3.10-slim-bookworm AS base
 
 ARG VERSION
 
@@ -25,7 +25,7 @@ ENV PYTHONPATH="/usr/local/lib/python${PYTHON_VERSION}/site-packages"
 COPY --from=build-stage-1 /usr/local /usr/local
 
 # PRODUCTION Image
-FROM base as production
+FROM base AS production
 
 RUN mkdir /usr/local/api/
 COPY setup.py requirements.txt /usr/local/api/
@@ -45,9 +45,3 @@ RUN pip3 --no-cache-dir install --upgrade pip && \
 CMD ["/usr/local/bin/docker-command.sh"]
 
 EXPOSE 8000
-
-# REDIS setup
-FROM base as redis-setup
-
-COPY redis-model-store.py /usr/local/bin/modelstore
-RUN chmod +x /usr/local/bin/modelstore

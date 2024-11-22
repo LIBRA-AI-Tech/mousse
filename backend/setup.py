@@ -20,7 +20,6 @@ setuptools.setup(
         "numpy>=1.19.0,<1.23.0",
         "transformers>=4.19.0,<4.20.0",
         "tokenizers>=0.12.1,<0.13.0",
-        "redisai>=1.2.0,<1.3.0",
     ],
     python_requires='>=3.10',
     zip_safe=False,

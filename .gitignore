@@ -1,4 +1,6 @@
 .python-env
+model-repository/*
+!model-repository/.gitkeep
 __pycache__
 *.egg-info
 build
