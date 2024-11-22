@@ -6,3 +6,4 @@ from .record_topic import RecordTopic
 from .raw_record import RawRecord
 from .location import Location
 from .embedding import Embedding
+from .countries import Countries
