@@ -1,6 +1,8 @@
 .python-env
 model-repository/*
 !model-repository/.gitkeep
+data/*
+!data/CNTR_RG_01M_2024_4326.geojson
 __pycache__
 *.egg-info
 build
