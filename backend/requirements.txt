@@ -18,3 +18,4 @@ shapely==2.0.6
 pandas==2.2.2
 pyarrow==17.0.0
 pydantic-geojson==0.1.1
+json-repair==0.30.2

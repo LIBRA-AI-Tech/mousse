@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from mousse_api.logger import logger
 from mousse_api._version import __version__
-from .router import search, country
+from .router import search, country, ner
 
 logger.info("Creating FastAPI app")
 app = FastAPI(
@@ -15,3 +15,4 @@ app = FastAPI(
 
 app.include_router(search.router)
 app.include_router(country.router)
+app.include_router(ner.router)

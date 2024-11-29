@@ -1,0 +1,36 @@
+from pydantic import BaseModel, Field
+from datetime import date
+
+class Entities(BaseModel):
+    location: str | None = Field(None, description="Exact location as found in the query")
+    date: str | None = Field(None, description="Exact date as found in the query")
+
+class TimeRange(BaseModel):
+    start: str | None = Field(None, description="Starting date of the extracted timerange")
+    end: str | None = Field(None, description="Ending date of the extracted timerange")
+
+class Country(BaseModel):
+    code: str
+    label: str
+
+class Month(BaseModel):
+    kind: str
+    value: str
+    label: str
+
+class LLMResponse(BaseModel):
+    country: list[str] = Field([], description="Extracted list of country or countries")
+    periodStart: date | None = Field(None, description="Period start in ISO 8601 format, filled in only if date-related entity corresponds to absolute date range, else null")
+    periodEnd: date | None = Field(None, description="Period end in ISO 8601 format, filled in only if date-related entity corresponds to absolute date range, else null")
+    phase: list[int] | None = Field(None, description="A list of months indicated by integers from 1 to 12, filled in only if date-related entity corresponds to a reccuring yearly period. It should be null in case `periodStart` or `periodEnd` has been extracted.", min=1, max=12)
+    location: str | None = Field(None, description="The location-related entity  **exactly** as found in the prompt")
+    date: str | None = Field(None, description="The date-related entity **exactly** as found in the prompt")
+    cleanedQuery: str = Field(..., description="Query cleaned from the extracted date-related entity and the location-related entity and their related parts (e.g. prepositions)")
+
+class NERAnalysisResponse(BaseModel):
+    query: str = Field(..., description="Original query")
+    country: list[Country] | None = Field(None, description="Extracted Country")
+    timerange: TimeRange | None = Field(None, description="Extracted Time Range")
+    phase: list[Month] | None = Field(None, description="Extracted time phase")
+    entities: Entities | None = Field(None, description="Exact entities as found in query")
+    cleanedQuery: str = Field(..., description="Query cleaned from the extracted entities and their related parts")

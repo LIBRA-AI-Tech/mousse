@@ -31,6 +31,7 @@ setuptools.setup(
         "pandas>=2.2.2,<2.3.0",
         "pyarrow>=17.0.0,<18.0.0",
         "pydantic-geojson>=0.1.1,<0.2.0",
+        "json-repair>=0.30.2,<0.31.0",
     ],
     python_requires='>=3.10',
     zip_safe=False,
