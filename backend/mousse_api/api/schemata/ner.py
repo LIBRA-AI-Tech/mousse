@@ -2,16 +2,16 @@ from pydantic import BaseModel, Field
 from datetime import date
 
 class Entities(BaseModel):
-    location: str | None = Field(None, description="Exact location as found in the query")
-    date: str | None = Field(None, description="Exact date as found in the query")
+    location: str | None = Field(None, description="Exact location as found in the query", example="Rome")
+    date: str | None = Field(None, description="Exact date as found in the query", example="last summer")
 
 class TimeRange(BaseModel):
-    start: str | None = Field(None, description="Starting date of the extracted timerange")
-    end: str | None = Field(None, description="Ending date of the extracted timerange")
+    start: str | None = Field(None, description="Starting date of the extracted timerange", example="2024-06-01")
+    end: str | None = Field(None, description="Ending date of the extracted timerange", example="2024-08-31")
 
 class Country(BaseModel):
-    code: str
-    label: str
+    code: str = Field(..., description="Country code", example="IT")
+    label: str = Field(..., description="Country (english) name", example="Italy")
 
 class Month(BaseModel):
     kind: str
@@ -28,9 +28,9 @@ class LLMResponse(BaseModel):
     cleanedQuery: str = Field(..., description="Query cleaned from the extracted date-related entity and the location-related entity and their related parts (e.g. prepositions)")
 
 class NERAnalysisResponse(BaseModel):
-    query: str = Field(..., description="Original query")
+    query: str = Field(..., description="Original query", example="Air pollution in Rome last summer")
     country: list[Country] | None = Field(None, description="Extracted Country")
     timerange: TimeRange | None = Field(None, description="Extracted Time Range")
-    phase: list[Month] | None = Field(None, description="Extracted time phase")
+    phase: list[Month] | None = Field(None, description="Extracted time phase", example=[])
     entities: Entities | None = Field(None, description="Exact entities as found in query")
-    cleanedQuery: str = Field(..., description="Query cleaned from the extracted entities and their related parts")
+    cleanedQuery: str = Field(..., description="Query cleaned from the extracted entities and their related parts", example="Air pollution in Rome")
