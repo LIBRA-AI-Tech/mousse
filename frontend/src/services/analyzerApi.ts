@@ -21,6 +21,6 @@ export interface AnalyzerResponse {
 }
 
 export const analyzeQuery = async (query: string): Promise<ApiResponse<AnalyzerResponse>> => {
-    const response = await fetch(`${API_BASE_URL}/analyze?query=${encodeURI(query)}`);
+    const response = await fetch(`${API_BASE_URL}/ner/analyze?query=${encodeURI(query)}`);
     return handleResponse<AnalyzerResponse>(response);
 }
