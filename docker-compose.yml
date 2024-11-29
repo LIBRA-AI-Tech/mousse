@@ -22,10 +22,36 @@ services:
       retries: 5
       start_period: 30s
 
+tgi:
+    restart: unless-stopped
+    image: ghcr.io/huggingface/text-generation-inference:2.4.1
+    ports:
+      - 8883:80
+    environment:
+      - QUANTIZE=eetq
+      - MODEL_ID=microsoft/Phi-3.5-mini-instruct
+    volumes:
+      - ./tgi/model:/data
+    shm_size: 2gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 100
+
   api:
     restart: unless-stopped
     depends_on:
       triton:
+        condition: service_healthy
+tgi:
         condition: service_healthy
     image: "mousse/search-service:${VERSION}"
     build:
