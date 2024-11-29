@@ -1,0 +1,33 @@
+name: "gte-Qwen2-1.5B-instruct"
+backend: "python"
+max_batch_size: 4
+
+input [
+    {
+        name: "TEXT"
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+    }
+]
+
+output [
+    {
+        name: "EMBEDDINGS"
+        data_type: TYPE_FP32
+        dims: [ -1, 1536 ]
+    }
+]
+
+parameters: {
+    key: "max_length"
+    value: {
+        string_value: "${max_length}"
+    }
+}
+
+parameters: {
+    key: "task_description"
+    value: {
+        string_value: "${task_description}"
+    }
+}

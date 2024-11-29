@@ -4,17 +4,22 @@ volumes:
 services:
   triton:
     restart: unless-stopped
-    image: nvcr.io/nvidia/tritonserver:24.08-py3
+    build:
+      context: ./triton
     volumes:
-      - ./model-repository:/models
+      - ./triton/model-repository:/models
+      - ./triton/engines:/engines
     command: [
       "tritonserver",
       "--model-repository=/models",
     ]
     ports:
-      - "8000:8000" # HTTP port
-      - "8001:8001" # gRPC port
-      - "8002:8002" # Metrics port
+      - "8880:8000" # HTTP port
+      - "8881:8001" # gRPC port
+      - "8882:8002" # Metrics port
+    environment:
+      MAX_LENGTH: ${MAX_LENGTH}
+      TASK_DESCRIPTION: ${TASK_DESCRIPTION}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
       interval: 30s
@@ -22,7 +27,7 @@ services:
       retries: 5
       start_period: 30s
 
-tgi:
+  tgi:
     restart: unless-stopped
     image: ghcr.io/huggingface/text-generation-inference:2.4.1
     ports:
@@ -51,7 +56,7 @@ tgi:
     depends_on:
       triton:
         condition: service_healthy
-tgi:
+      tgi:
         condition: service_healthy
     image: "mousse/search-service:${VERSION}"
     build:
