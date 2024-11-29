@@ -16,7 +16,7 @@ num_workers=${G_WORKERS:-"2"}
 server_port=${PORT:-"8000"}
 export WORKER_CLASS=${WORKER_CLASS:-"uvicorn.workers.UvicornWorker"}
 
-exec gunicorn --access-logfile - \
+exec gunicorn --log-config logging.conf --access-logfile - \
     --preload \
     --worker-tmp-dir /dev/shm \
     --workers ${num_workers} \
