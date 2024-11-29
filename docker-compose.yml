@@ -34,7 +34,7 @@ services:
       - 8883:80
     environment:
       - QUANTIZE=eetq
-      - MODEL_ID=microsoft/Phi-3.5-mini-instruct
+      - MODEL_ID=${LLM_MODEL}
     volumes:
       - ./tgi/model:/data
     shm_size: 2gb
