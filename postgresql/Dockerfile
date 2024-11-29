@@ -5,9 +5,10 @@ RUN apt-get update \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN cargo install cargo-pgrx --version 0.11.4 --locked
+ENV RUSTFLAGS="-C target-feature=+avx2,+fma"
+RUN cargo install cargo-pgrx --version 0.12.5 --locked
 RUN cargo pgrx init --pg16 pg_config
-RUN cd /tmp && git clone --branch 0.3.0 https://github.com/timescale/pgvectorscale
+RUN cd /tmp && git clone --branch 0.5.1 https://github.com/timescale/pgvectorscale
 RUN cd /tmp/pgvectorscale/pgvectorscale && cargo pgrx install --release
 
 
@@ -29,11 +30,8 @@ RUN apt-get update \
       && rm -rf /var/lib/apt/lists/*
 
 COPY --from=pgvectorscale  /usr/share/postgresql/16/extension/vectorscale.control /usr/share/postgresql/16/extension/vectorscale.control
-COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale--0.3.0.sql /usr/share/postgresql/16/extension/vectorscale--0.3.0.sql
-COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale--0.2.0--0.3.0.sql /usr/share/postgresql/16/extension/vectorscale--0.2.0--0.3.0.sql
-COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale--0.0.2--0.2.0.sql /usr/share/postgresql/16/extension/vectorscale--0.0.2--0.2.0.sql
-COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale--0.0.2--0.3.0.sql /usr/share/postgresql/16/extension/vectorscale--0.0.2--0.3.0.sql
-COPY --from=pgvectorscale /usr/lib/postgresql/16/lib/vectorscale-0.3.0.so /usr/lib/postgresql/16/lib/vectorscale-0.3.0.so
+COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale*.sql /usr/share/postgresql/16/extension/
+COPY --from=pgvectorscale /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so
 
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./initdb-postgis.sh /docker-entrypoint-initdb.d/10_postgis.sh
