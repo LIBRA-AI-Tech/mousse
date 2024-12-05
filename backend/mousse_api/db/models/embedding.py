@@ -9,7 +9,7 @@ class Embedding(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     record_uuid = Column(UUID(as_uuid=True), ForeignKey('core.record.uuid', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    vector = Column(Vector(768), nullable=False)
+    vector = Column(Vector(1536), nullable=False)
 
     __table_args__ = (
         Index(
