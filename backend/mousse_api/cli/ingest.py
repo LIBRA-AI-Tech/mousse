@@ -13,6 +13,9 @@ from sqlalchemy.dialects.postgresql import UUID, ARRAY, VARCHAR, ENUM, TSTZRANGE
 import sqlalchemy.ext.asyncio
 from pgvector.sqlalchemy import Vector
 from mousse_api.db import get_session
+from mousse_api.logger import getLogger
+
+logger = getLogger()
 
 CHUNKSIZE = 1000
 
@@ -23,7 +26,7 @@ class NumpyEncoder(json.JSONEncoder):
         return super().default(obj)
 
 async def ingest(datapath: str) -> None:
-    async with get_session() as session:
+    async for session in get_session():
         parquet_file = pq.ParquetFile(datapath)
         for batch in parquet_file.iter_batches(batch_size=CHUNKSIZE):
             df = batch.to_pandas()
