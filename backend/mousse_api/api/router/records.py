@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from uuid import UUID
 
 from mousse_api.db import get_session
+from mousse_api.db.models import RawRecord
 from mousse_api.api.schemata.records import SearchBody, SearchResponse
 from mousse_api.api.utils.vector_search_sql import SqlConstuctor
 from mousse_api.api.utils.inference import inference
@@ -33,6 +36,18 @@ def _epoch_to_months(epoch):
         if season in epoch:
             months.extend(seasons[season])
     return list(set(months))
+
+@router.get('', summary="Raw record", description="Get raw metadata of a specific record given its unique id.")
+async def record(id: UUID = Query(..., description="Record UUID"), session: AsyncSession = Depends(get_session)):
+    stmt = select(
+        RawRecord.metadata_
+    ).where(RawRecord.record_uuid == id)
+    result = await session.execute(stmt)
+
+    record = result.first()
+    if record:
+        record = record._asdict()['metadata_']
+    return record
 
 @router.post('/search', summary="Search metadata", response_model=SearchResponse)
 async def search(body: SearchBody, session: AsyncSession = Depends(get_session)):
