@@ -49,7 +49,37 @@ async def record(id: UUID = Query(..., description="Record UUID"), session: Asyn
         record = record._asdict()['metadata_']
     return record
 
-@router.post('/search', summary="Search metadata", response_model=SearchResponse)
+@router.post(
+    '/search',
+    summary="Semantic Search and Filtering",
+    description="""
+Performs a semantic search on the given query and applies optional filters based on spatial, temporal,
+and other criteria. The search uses embeddings to find relevant results and supports pagination for
+large result sets.
+
+### Endpoint Details
+
+- **Query**: The search term provided by the user, processed using semantic embeddings.
+
+- **Filters**:
+    - **Countries**: Restricts results to specific countries based on provided country codes.
+    - **Features**: Filters results spatially using GeoJSON-defined geographic boundaries.
+    - **Date Range**: Narrows results to a specific time frame using start and end dates.
+    - **Epoch**: Allows filtering by predefined temporal periods, such as months or seasons.
+
+- **Pagination**:
+    - Results are paginated based on the `page` and `resultsPerPage` parameters.
+
+- **Threshold**: A filtering parameter that adjusts the relevance threshold for semantic similarity.
+
+#### Process
+1. The search query is transformed into embeddings for semantic similarity.
+2. SQL filters are dynamically constructed based on the provided filters.
+3. The search is executed against the database using the constructed SQL and embeddings.
+4. Results are returned as a paginated response with metadata about whether more results are available.
+    """,
+    response_model=SearchResponse
+)
 async def search(body: SearchBody, session: AsyncSession = Depends(get_session)):
     sql = SqlConstuctor(page=body.page, results_per_page=body.resultsPerPage, threshold=body.threshold)
     if body.countries is not None:

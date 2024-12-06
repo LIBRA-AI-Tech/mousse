@@ -91,7 +91,29 @@ def _extract_json(markdown_string: str) -> str:
         raise JSON_NOT_FOUND
     return json_match.group(1)
 
-@router.get('/analyze', summary="Name-Entity Recognition on a query", response_model=NERAnalysisResponse)
+@router.get(
+    '/analyze',
+    summary="Name-Entity Recognition",
+    description="""
+Analyzes a query for named entities related to locations and dates using a LLM for name-entity recognition (NER).
+The extracted entities are processed and mapped to countries, date ranges, or recurring yearly periods.
+Additionally, the query is cleaned by removing detected entities and their syntactical relations, leaving only
+the core query text. The endpoint returns structured information for downstream applications.
+
+### Endpoint Details:
+- **Query**: The user-provided input string for analysis.
+
+#### Process
+1. **Entity Extraction**:
+    - Location-related entities are extracted and mapped to corresponding countries.
+    - Date-related entities are analyzed and transformed into ISO 8601 date ranges or recurring yearly periods (months).
+2. **Relation Cleanup**: Entities and their syntactical relations (e.g., prepositions) are removed from the query.
+3. **Validation**: It is ensured that the LLM-generated JSON matches the required schema and any malformed JSON is repaired if needed.
+4. **Country Mapping**: Mapped countries are retrieved from the database based on extracted location names.
+5. **Response Construction**: The response includes structured entities, temporal filters, and a cleaned query.
+    """,
+    response_model=NERAnalysisResponse
+)
 async def ner(query: str, session: AsyncSession = Depends(get_session)):
 
     success = False
