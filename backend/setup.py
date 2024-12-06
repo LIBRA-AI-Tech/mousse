@@ -13,7 +13,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "fastapi>=0.89.0,<0.120.0",
-        "numpy>=2.1.0,<2.2.0",
         "gunicorn>=22.0.0,<24.0.0",
         "uvicorn[standard]>=0.18.0,<0.33.0",
         "sqlalchemy>=2.0.28,<2.1.0",
@@ -29,6 +28,7 @@ setuptools.setup(
         "pydantic-geojson>=0.1.1,<0.2.0",
         "json-repair>=0.30.2,<0.31.0",
         "requests>=2.32.0,<2.33.0",
+        "tritonclient[grpc]>=2.52.0,<2.53.0",
     ],
     python_requires='>=3.10',
     zip_safe=False,

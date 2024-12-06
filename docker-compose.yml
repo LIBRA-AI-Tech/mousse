@@ -69,6 +69,9 @@ services:
     environment:
       - ROOT_PATH=${ROOT_PATH:-}
       - DB_URI=postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_USER_PASS}@db:5432/${POSTGRES_DB}
+- TRITON_URL=triton
+      - TRITON_GRPC_PORT=8881
+      - TRITON_MODEL_NAME=${INFERENCE_MODEL_NAME}
     volumes:
       - ./data:/var/local/data:ro
       - ./model-repository:/var/local/models:ro
