@@ -1,6 +1,6 @@
 import json
 import shapely
-from sqlalchemy import text, TextClause, bindparam, String, Date, Integer
+from sqlalchemy import text, TextClause, bindparam, String, Date, Integer, Float
 from pgvector.sqlalchemy import Vector
 
 class SqlConstuctor():
@@ -70,6 +70,21 @@ class SqlConstuctor():
             FROM core.embedding
             ORDER BY distance
             OFFSET %(offset)d LIMIT %(limit)d
+        """,
+        'records': """
+            SELECT 
+                ROUND(1 - emb.distance::numeric, 4) AS score,
+                rec.uuid, rec.geoss_id AS original_id, rec.title, rec.description, rec.format, rec.keyword,
+                array_agg(topic.topic) AS topic,
+                loc.geometry
+            FROM vector_search emb
+            JOIN core.record rec ON rec."uuid" = emb.record_uuid
+            LEFT JOIN core.record_topic bridge ON bridge.record_uuid= emb.record_uuid
+            LEFT JOIN core.topic topic ON topic.id = bridge.topic_id
+            LEFT JOIN core.location loc ON loc.record_uuid = emb.record_uuid
+            WHERE distance < %(maximum_distance)s
+            GROUP BY rec."uuid", emb.distance, loc.geometry
+            ORDER BY distance
         """
     }
 
@@ -212,7 +227,12 @@ class SqlConstuctor():
         offset = (self.page - 1) * self.results_per_page
         self.queries.update({'vector_search': self._part(cte_part, embedding=':embedding', offset=offset, limit=self.results_per_page + 1)})
 
-    def create(self, embedding: list[float]) -> TextClause:
+    def _add_records_cte(self, maximum_distance: float) -> None:
+        cte_part = 'records'
+        self.parameters.append(bindparam("maximum_distance", value=maximum_distance, type_=Float))
+        self.queries.update({'records': self._part(cte_part, maximum_distance=':maximum_distance')})
+
+    def create(self, embedding: list[float], output: str = 'json') -> TextClause:
         """
         Creates the final SQL query, including all specified filters.
 
@@ -222,22 +242,16 @@ class SqlConstuctor():
         Returns:
             sqlalchemy.TextClause: A SQLAlchemy TextClause object representing the final query.
         """
+        if output != 'json' and output != 'geojson':
+            raise ValueError("`output` should be one of `json` or `geojson`")
         solo = not self._add_ensemble_cte()
         self._add_embedding_cte(embedding, solo)
+        self._add_records_cte(1 - self.threshold)
         ctes = ",\n".join([f"{name} AS ({stmt})" for name, stmt in self.queries.items()])
-        maximum_distance = 1 - self.threshold
+        select_stmt = "*" if output == 'json' else "ST_AsGeoJSON(records.*, id_column => 'uuid')"
         stmt = f"""
             WITH {ctes}
-            SELECT 
-                ROUND(1 - emb.distance::numeric, 4) AS score,
-                rec.uuid, rec.geoss_id AS original_id, rec.title, rec.description, rec.format, rec.keyword,
-                array_agg(topic.topic) AS topic
-            FROM vector_search emb
-            JOIN core.record rec ON rec."uuid" = emb.record_uuid
-            LEFT JOIN core.record_topic bridge ON bridge.record_uuid= emb.record_uuid
-            LEFT JOIN core.topic topic ON topic.id = bridge.topic_id
-            WHERE distance < {maximum_distance}
-            GROUP BY rec."uuid", emb.distance
-            ORDER BY distance
+            SELECT {select_stmt}
+            FROM records
         """.strip()
         return text(stmt).bindparams(*self.parameters)
