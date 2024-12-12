@@ -35,10 +35,10 @@ class TritonPythonModel:
     def initialize(self, args):
         model_config = json.loads(args['model_config'])
         model_engine = "/engines/gte-Qwen2-1.5B-instruct"
-        self.tokenizer = AutoTokenizer.from_pretrained(model_engine)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_engine, trust_remote_code=True)
         self.max_length = get_parameter(model_config, "max_length", default=8192, pytype=int)
         self.task_description = get_parameter(model_config, "task_description")
-        self.model = AutoModel.from_pretrained(model_engine)
+        self.model = AutoModel.from_pretrained(model_engine, trust_remote_code=True)
         self.model.eval()
 
     def last_token_pool(self, last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
