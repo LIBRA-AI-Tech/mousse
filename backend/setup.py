@@ -27,7 +27,7 @@ setuptools.setup(
         "pyarrow>=17.0.0,<19.0.0",
         "pydantic-geojson>=0.1.1,<0.2.0",
         "json-repair>=0.30.2,<0.31.0",
-        "requests>=2.32.0,<2.33.0",
+        "httpx>=0.28.0,<0.29.0",
         "tritonclient[grpc]>=2.52.0,<2.53.0",
     ],
     python_requires='>=3.10',

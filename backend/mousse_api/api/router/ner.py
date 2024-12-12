@@ -1,4 +1,5 @@
-import requests
+import os
+import httpx
 import json
 import re
 from datetime import date
@@ -58,9 +59,9 @@ MAX_REQUESTS = 3
 class JSON_NOT_FOUND(Exception):
     """Raised when the LLM response does not contain a valid JSON"""
 
-def _chat_completion(query: str) -> str:
+async def _chat_completion(query: str) -> str:
     url = "http://tgi:80/v1/chat/completions"
-    model = "microsoft/Phi-3-mini-4k-instruct"
+    model = os.getenv('LLM_MODEL')
     payload = {
         "model": model,
         "messages": [
@@ -71,13 +72,12 @@ def _chat_completion(query: str) -> str:
         "temperature": 0,
     }
 
-
     headers = { 'Content-Type': 'application/json' }
 
-    response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-    
-    try:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload, timeout=120)
         response = response.json()
+    try:
         markdown_string = response['choices'][0]['message']['content']
 
     except:
@@ -119,7 +119,10 @@ async def ner(query: str, session: AsyncSession = Depends(get_session)):
     success = False
     retries = 0
     while not success and retries < 3:
-        markdown_string = _chat_completion(query)
+        try:
+            markdown_string = await _chat_completion(query)
+        except Exception as e:
+            raise HTTPException(status_code=503, detail="LLM Server is down")
         try:
             try:
                 json_string = _extract_json(markdown_string)
