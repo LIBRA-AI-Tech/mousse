@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, FeatureGroup, ZoomControl, GeoJSON } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
@@ -16,10 +17,12 @@ const fillColor = "#ffd672";
 function Map() {
 
   const dispatch = useAppDispatch();
-  const { results } = useSelector((state: RootState) => state.search);
+  const { results, status } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
   const { isDrawOnMapActive } = useSelector((state: RootState) => state.ui);
+  const [shouldMapFocus, setShouldMapFocus] = useState(false);
   let activeTimeoutId: number|null = null;
+  const mapRef = useRef<L.Map>(null);
 
   const geojsonMarkerOptions = {
     radius: 8,
@@ -50,6 +53,10 @@ function Map() {
   const geojsonCallback = (f: L.GeoJSON) => {
     if (!f)
       return;
+    if (mapRef.current && shouldMapFocus) {
+      mapRef.current.fitBounds(f.getBounds());
+      setShouldMapFocus(false);
+    }
     f.eachLayer((layer: L.Layer) => {
       const geoJsonLayer = layer as L.GeoJSON;
       const feature = geoJsonLayer.feature as GeoJSON.Feature;
@@ -82,13 +89,21 @@ function Map() {
     })
   }
 
+  useEffect(() => {
+    if (status === 'succeeded') {
+      setShouldMapFocus(true);
+    }
+  }, [status]);
+
   return (
     <MapContainer
+      ref={mapRef}
       center={[47, 10]}
       zoom={5}
       zoomControl={false}
       scrollWheelZoom={true}
       style={{height: 'calc(100vh - 100px)'}}
+      minZoom={3}
     >
       <ZoomControl position="topright" />
       <TileLayer
@@ -112,7 +127,7 @@ function Map() {
           />
         </FeatureGroup>
       }
-      { results &&
+      { (status === 'succeeded' && results) &&
         <FeatureGroup>
           <GeoJSON
             ref={geojsonCallback}
