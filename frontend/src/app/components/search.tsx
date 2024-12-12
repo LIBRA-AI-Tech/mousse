@@ -8,11 +8,12 @@ import TuneIcon from '@mui/icons-material/Tune';
 import FilterBar, { FilterValuesType } from './filterBar';
 import { RootState, useAppDispatch } from '../store';
 import { toggleFilterSection } from '../../features/ui/uiSlice';
-import { fetchResults, resetResults } from '../../features/search/searchSlice';
+import { fetchRecords, resetResults } from '../../features/search/searchSlice';
 import { ClearIcon } from '@mui/x-date-pickers';
 
 import { analyzeQuery, AnalyzerResponse } from '../../services/analyzerApi';
 import StyledInput from '../../components/styledInput';
+import { CountryType, PhaseOptionType } from '../../types';
 
 const Search = () => {
 
@@ -34,6 +35,8 @@ const Search = () => {
 
   const [analyzerJobId, setAnalyzerJobId] = useState<number|null>(null);
 
+  const { features } = useSelector((state: RootState) => state.map);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +51,19 @@ const Search = () => {
       inputRef.current.blur();
     }
     if (query !== '') {
-      dispatch(fetchResults());
+      dispatch(fetchRecords({
+        query,
+        page: 1, 
+        countries: filterValues.country.map((c: CountryType) => c.code),
+        features,
+        dateRange: {start: filterValues.startDate?.toISOString(), end: filterValues.endDate?.toISOString()},
+        epoch: filterValues.phase.map((phase: PhaseOptionType) => phase.value),
+        output: 'geojson'
+      }));
     } else {
       dispatch(resetResults());
     }
-  }, [dispatch, query]);
+  }, [dispatch, query, filterValues, features]);
 
   const handleFilterChange = ({name, value}: {name: string, value: FilterValuesType['country']|FilterValuesType['phase']|Dayjs|null}) => {
     setFilterValues({...filterValues, [name]: value});

@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './app';
@@ -18,7 +18,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <HelmetProvider>
         <BrowserRouter>
           <Suspense>
-            <App />
+            <Routes>
+              <Route index element={<App/>} />
+              <Route path='/r/:record' element={<App />} />
+              <Route path="/404" element={<p>Not found</p>} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
           </Suspense>
         </BrowserRouter>
       </HelmetProvider>

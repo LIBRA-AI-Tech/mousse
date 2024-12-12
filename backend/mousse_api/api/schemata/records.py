@@ -90,6 +90,7 @@ class TemporalExtent(BaseModel):
 
 class Online(BaseModel):
     description: str | None
+    name: str | None
     url: str | None
 
 class RecordDetails(RecordBase):

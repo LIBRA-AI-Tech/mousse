@@ -1,13 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Button, Grid2, List, ListItem, ListItemText, Pagination, Paper, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Paper, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
-import { setHoveredFeature } from "../../features/map/mapSlice";
+import { setHoveredFeature, setResultPage } from "../../features/map/mapSlice";
 
 export default function Results() {
   const dispatch = useAppDispatch();
+  const navigateTo = useNavigate();
 
-  const { results } = useSelector((state: RootState) => state.search);
+  const { results, status } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
   let activeTimeoutId: number|null = null;
 
@@ -27,6 +29,7 @@ export default function Results() {
   }
 
   const truncateText = (text: string): string => {
+    if (!text) return '';
     const words = text.split(' ').filter(w => w.trim().length > 0);
     const finalText = words.length > 15 ? words.slice(0, 15).join(' ') + "…" : text;
 
@@ -47,7 +50,7 @@ export default function Results() {
 
   return (
     <Paper sx={{height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto'}}>
-      <List sx={{}}>
+      <List sx={status === 'loading' ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
         {results?.features.map((f) => (
           <ListItem
             key={`feature-${f.id}`}
@@ -63,30 +66,41 @@ export default function Results() {
           >
             <ListItemText
               secondary={hoveredFeature === f.id ?
-                <Grid2 component="span" container sx={{textAlign: 'justify'}}>
-                  <Grid2 component="span" size={10}>
+                <Grid2 component="span" container sx={{wordBreak: 'break-word'}}>
+                  <Grid2 component="span" size={10} sx={{textAlign: 'justify'}}>
                     {f.properties?.description}
                   </Grid2>
-                  <Grid2 component="span" size={2}>
-                    <Button color="warning">See More</Button>
+                  <Grid2 component="span" size={2} sx={{textAlign: 'right'}}>
+                    <Button color="warning" onClick={() => navigateTo(`/r/${f.id}`)}>See More</Button>
                   </Grid2>
+                  {f.properties?.keyword && (
+                    <Grid2 component="span" size={10} sx={{mt: 1}}>
+                      <b>Keywords:</b> {f.properties.keyword.join('; ')}
+                    </Grid2>
+                  )}
                 </Grid2>
                 :
                 truncateText(f.properties?.description)}
             >
+              <Typography component="div" sx={{textAlign: 'right'}}>
+                {f.properties?.topic.filter((topic: string | null) => topic !== null).map((topic: string, index: number) => (
+                  <Chip key={`chip_${f.id}_${index}`} component="span" label={topic} size="small" />
+                ))}
+              </Typography>
               <Typography sx={{textAlign: 'left'}}>{f.properties?.title}</Typography>
             </ListItemText>
           </ListItem>
         ))}
       </List>
       <Pagination
-        count={10}
-        showFirstButton
-        showLastButton
-        hidePrevButton
-        hideNextButton
+        count={3}
+        showFirstButton={true}
+        showLastButton={false}
+        hidePrevButton={false}
+        hideNextButton={false}
         size="small"
         sx={{pb: 2, display: 'flex', justifyContent: 'center'}}
+        onChange={(_, page) => dispatch(setResultPage(page))}
       />
     </Paper>
   );
