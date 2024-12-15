@@ -49,6 +49,7 @@ class RecordBase(BaseModel):
     topic: list[str|None] | None = Field(..., description="A list of topics or themes associated with the record, providing contextual classification.", example="geoscientific|information")
 
 class RecordProperties(RecordBase):
+    score: float = Field(..., description="The similarity score based on the cosine distance", gt=0, lt=1)
     original_id: str = Field(..., description="The original identifier of the record from the source system.", example="urn:de.pangaea:dataset:741134")
     format: list[str] | None = Field(..., description="A list of formats associated with the record, such as file types or categories.", example=["text/tab-separated-values"])
 
@@ -72,7 +73,6 @@ class RecordGeoJSON(BaseModel):
 
 class SearchGeoJSONResponse(SearchResponseBase):
     data: RecordGeoJSON
-
 
 class Organization(BaseModel):
     id: str

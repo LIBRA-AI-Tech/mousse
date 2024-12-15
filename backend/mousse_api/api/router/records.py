@@ -103,12 +103,12 @@ async def search(body: SearchBody, session: AsyncSession = Depends(get_session))
     if body.country is not None and len(body.country) > 0:
         sql.add('country', body.country)
     elif body.features is not None and len(body.features) > 0:
-        sql.add('features', body.features)
+        sql.add('spatial', body.features)
     if body.dateRange is not None and (body.dateRange.start or body.dateRange.end):
         start_date = body.dateRange.start.isoformat() if body.dateRange.start is not None else '0001-01-01'
         end_date = body.dateRange.end.isoformat() if body.dateRange.end is not None else '9999-12-31'
         sql.add('daterange', start_date, end_date)
-    elif body.epoch is not None and len(body.epoch) > 0:
+    if body.epoch is not None and len(body.epoch) > 0:
         months = _epoch_to_months(body.epoch)
         sql.add('epoch', months)
 

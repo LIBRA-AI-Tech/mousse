@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 import shapely
 from sqlalchemy import text, TextClause, bindparam, String, Date, Integer, Float
 from pgvector.sqlalchemy import Vector
@@ -21,15 +22,15 @@ class SqlConstuctor():
         'country': """
             SELECT record_uuid
             FROM core."location"
-            WHERE ST_Intersects(
-                geometry,
+            WHERE ST_Within(
+                ST_MakeValid(geometry),
                 (SELECT ST_Simplify(ST_Union(geometry), 0.1) FROM core.countries WHERE "code" IN (%(country_list)s))
             )
         """,
         'features': """
             SELECT record_uuid
             FROM core."location"
-            WHERE ST_Intersects(geometry, ST_GeomFromText(%(wkt)s, 4326))
+            WHERE ST_Within(ST_MakeValid(geometry), ST_GeomFromText(%(wkt)s, 4326))
         """,
         'daterange': """
             SELECT record_uuid
@@ -168,7 +169,7 @@ class SqlConstuctor():
         """
         geojson = {
             "type": "FeatureCollection",
-            "features": features,
+            "features": [f.dict() for f in features],
         }
         geojson = json.dumps(geojson)
         wkt = shapely.to_wkt(shapely.union_all(shapely.from_geojson(geojson)))
@@ -183,8 +184,8 @@ class SqlConstuctor():
             start_date (str): The start date in ISO format.
             end_date (str): The end date in ISO format.
         """
-        self.parameters.append(bindparam("start_date", value=start_date, type_=Date))
-        self.parameters.append(bindparam("end_date", value=end_date, type_=Date))
+        self.parameters.append(bindparam("start_date", value=datetime.strptime(start_date, '%Y-%m-%d').date(), type_=Date))
+        self.parameters.append(bindparam("end_date", value=datetime.strptime(end_date, '%Y-%m-%d').date(), type_=Date))
         self.queries.update({'date_filtered': self._part('daterange', start=':start_date', end=':end_date')})
 
     def _add_epoch_cte(self, months: list[str]) -> None:
