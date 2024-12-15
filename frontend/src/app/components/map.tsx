@@ -7,7 +7,8 @@ import L from 'leaflet';
 import type { DrawEvents } from 'leaflet';
 
 import { RootState, useAppDispatch } from '../store';
-import { setHoveredFeature, addLayer, editLayer, deleteLayer } from '../../features/map/mapSlice';
+import { setHoveredFeature } from '../../features/map/mapSlice';
+import { addLayer, editLayer, deleteLayer } from '../../features/search/searchSlice';
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -17,7 +18,8 @@ const fillColor = "#ffd672";
 function Map() {
 
   const dispatch = useAppDispatch();
-  const { results, status } = useSelector((state: RootState) => state.search);
+  const { data } = useSelector((state: RootState) => state.search.records);
+  const { status } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
   const { isDrawOnMapActive } = useSelector((state: RootState) => state.ui);
   const [shouldMapFocus, setShouldMapFocus] = useState(false);
@@ -127,11 +129,11 @@ function Map() {
           />
         </FeatureGroup>
       }
-      { (status === 'succeeded' && results) &&
+      { (status === 'succeeded' && data && data.features.length > 0) &&
         <FeatureGroup>
           <GeoJSON
             ref={geojsonCallback}
-            data={results}
+            data={data}
             pointToLayer={setIcon}
             style={{fillOpacity: 0.4, color: "grey", weight: 1}}
             onEachFeature={(f: Feature, layer: L.Path) => {

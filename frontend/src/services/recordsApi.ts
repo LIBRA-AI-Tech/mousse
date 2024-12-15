@@ -17,7 +17,7 @@ export interface RecordSearchRequest {
   query: string;
   page?: number;
   output?: 'json'|'geojson'
-  countries?: string[];
+  country?: string[];
   features?: Feature[];
   dateRange?: DateRange;
   epoch?: PhaseOptionType['value'][];

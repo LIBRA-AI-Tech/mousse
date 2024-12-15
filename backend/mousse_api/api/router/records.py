@@ -100,8 +100,8 @@ large result sets.
 )
 async def search(body: SearchBody, session: AsyncSession = Depends(get_session)):
     sql = SqlConstuctor(page=body.page, results_per_page=body.resultsPerPage, threshold=body.threshold)
-    if body.countries is not None and len(body.countries) > 0:
-        sql.add('country', body.countries)
+    if body.country is not None and len(body.country) > 0:
+        sql.add('country', body.country)
     elif body.features is not None and len(body.features) > 0:
         sql.add('features', body.features)
     if body.dateRange is not None and (body.dateRange.start or body.dateRange.end):

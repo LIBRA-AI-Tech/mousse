@@ -3,13 +3,15 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Paper, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
-import { setHoveredFeature, setResultPage } from "../../features/map/mapSlice";
+import { setHoveredFeature } from "../../features/map/mapSlice";
+import { setCurrentPage } from "../../features/search/searchSlice";
 
 export default function Results() {
   const dispatch = useAppDispatch();
   const navigateTo = useNavigate();
 
-  const { results, status } = useSelector((state: RootState) => state.search);
+  const { data } = useSelector((state: RootState) => state.search.records);
+  const { status, currentPage, pageCount } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
   let activeTimeoutId: number|null = null;
 
@@ -45,13 +47,13 @@ export default function Results() {
     }
   }, [hoveredFeature]);
 
-  if (!results)
+  if (!data)
     return null;
 
   return (
     <Paper sx={{height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto'}}>
       <List sx={status === 'loading' ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
-        {results?.features.map((f) => (
+        {data?.features.map((f) => (
           <ListItem
             key={`feature-${f.id}`}
             ref={(el) => (listItemRefs.current[f.id || ''] = el)}
@@ -92,16 +94,21 @@ export default function Results() {
           </ListItem>
         ))}
       </List>
-      <Pagination
-        count={3}
-        showFirstButton={true}
-        showLastButton={false}
-        hidePrevButton={false}
-        hideNextButton={false}
-        size="small"
-        sx={{pb: 2, display: 'flex', justifyContent: 'center'}}
-        onChange={(_, page) => dispatch(setResultPage(page))}
-      />
+      { data.features.length === 0 ?
+        <Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>
+        :
+        <Pagination
+          count={pageCount}
+          showFirstButton={true}
+          showLastButton={false}
+          hidePrevButton={false}
+          hideNextButton={false}
+          size="small"
+          sx={{pb: 2, display: 'flex', justifyContent: 'center'}}
+          page={currentPage}
+          onChange={(_, page) => dispatch(setCurrentPage(page))}
+        />
+      }
     </Paper>
   );
 }

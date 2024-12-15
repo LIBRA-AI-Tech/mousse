@@ -37,8 +37,8 @@ class SearchBody(BaseModel):
     resultsPerPage: PositiveInt = Field(10, description="The number of results to include per page in the response, with a maximum limit of 100.", le=100)
     threshold: float = Field(0.2, description="A threshold value (between 0 and 1) for filtering or scoring results. Higher values may indicate stricter criteria.", gt=0, lt=1)
     output: SearchOutput = Field('json', description="Determines the output of the data.")
-    countries: list[str] | None = Field(None, description="A list of country codes to filter results by geographic region.", example=['FR', 'IT'])
-    features: list[FeatureModel] | None = Field(None, description="A list of GeoJSON features used for spatial filtering (**intersection**). These features define geographic boundaries or areas of interest for the search.")
+    country: list[str] | None = Field(None, description="A list of country codes to filter results by geographic region.", example=['FR', 'IT'])
+    features: list[FeatureModel] | None = Field(None, description="A list of GeoJSON features used for spatial filtering (**intersection**). These features define geographic boundaries or areas of interest for the search. Ignored if `country` is given.")
     dateRange: DateRange | None = Field(None, description="A date range to filter results based on their temporal attributes.")
     epoch: list[Epoch] | None = Field(None, description="A list of time periods to filter results, including specific months (e.g., '01' for January) or seasons (e.g., 'winter' for the winter season).")
 

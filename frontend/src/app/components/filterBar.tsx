@@ -11,19 +11,12 @@ import AutumnIcon from '@mui/icons-material/WbCloudyOutlined';
 import WinterIcon from '@mui/icons-material/AcUnitOutlined';
 import { RootState, useAppDispatch } from '../store';
 import { toggleDrawOnMap } from '../../features/ui/uiSlice';
-import { resetLayer } from '../../features/map/mapSlice';
-import { CountryType, PhaseOptionType } from '../../types';
+import { resetLayer } from '../../features/search/searchSlice';
+import { CountryType, PhaseOptionType, FilterValuesType } from '../../types';
 
 interface RenderOptionProps extends React.HTMLAttributes<HTMLLIElement> {
   key: string;
 }
-
-export type FilterValuesType = {
-  country: CountryType[],
-  startDate: Dayjs|null,
-  endDate: Dayjs|null,
-  phase: PhaseOptionType[],
-};
 
 interface FilterBarProps {
   values: FilterValuesType;

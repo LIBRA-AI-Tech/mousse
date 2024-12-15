@@ -5,15 +5,15 @@ import _ from 'lodash';
 import { Paper, IconButton, Divider, Fade, ToggleButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import TuneIcon from '@mui/icons-material/Tune';
-import FilterBar, { FilterValuesType } from './filterBar';
+import FilterBar from './filterBar';
 import { RootState, useAppDispatch } from '../store';
 import { toggleFilterSection } from '../../features/ui/uiSlice';
-import { fetchRecords, resetResults } from '../../features/search/searchSlice';
+import { resetResults, submitSearch } from '../../features/search/searchSlice';
 import { ClearIcon } from '@mui/x-date-pickers';
 
 import { analyzeQuery, AnalyzerResponse } from '../../services/analyzerApi';
 import StyledInput from '../../components/styledInput';
-import { CountryType, PhaseOptionType } from '../../types';
+import { FilterValuesType } from '../../types';
 
 const Search = () => {
 
@@ -35,8 +35,6 @@ const Search = () => {
 
   const [analyzerJobId, setAnalyzerJobId] = useState<number|null>(null);
 
-  const { features } = useSelector((state: RootState) => state.map);
-
   const inputRef = useRef<HTMLInputElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -51,19 +49,11 @@ const Search = () => {
       inputRef.current.blur();
     }
     if (query !== '') {
-      dispatch(fetchRecords({
-        query,
-        page: 1, 
-        countries: filterValues.country.map((c: CountryType) => c.code),
-        features,
-        dateRange: {start: filterValues.startDate?.toISOString(), end: filterValues.endDate?.toISOString()},
-        epoch: filterValues.phase.map((phase: PhaseOptionType) => phase.value),
-        output: 'geojson'
-      }));
+      dispatch(submitSearch({query, filterValues}));
     } else {
       dispatch(resetResults());
     }
-  }, [dispatch, query, filterValues, features]);
+  }, [dispatch, query, filterValues]);
 
   const handleFilterChange = ({name, value}: {name: string, value: FilterValuesType['country']|FilterValuesType['phase']|Dayjs|null}) => {
     setFilterValues({...filterValues, [name]: value});
@@ -241,18 +231,18 @@ const Search = () => {
         >
           <TuneIcon color={_.isEqual(filterValues, initialFilterValues) ? 'primary' : 'warning'} />
         </ToggleButton>
+        { (isFilterToggleButtonPressed || isFilterSectionOpen) &&
+          <Fade in={(isFilterToggleButtonPressed || isFilterSectionOpen)} timeout={500}>
+            <div>
+              <FilterBar
+                values={filterValues}
+                onChange={handleFilterChange}
+                onReset={handleFiltersReset}
+              />
+            </div>
+          </Fade>
+        }
       </Paper>
-      { (isFilterToggleButtonPressed || isFilterSectionOpen) &&
-        <Fade in={(isFilterToggleButtonPressed || isFilterSectionOpen)} timeout={500}>
-          <div>
-            <FilterBar
-              values={filterValues}
-              onChange={handleFilterChange}
-              onReset={handleFiltersReset}
-            />
-          </div>
-        </Fade>
-      }
     </div>
   );
 }

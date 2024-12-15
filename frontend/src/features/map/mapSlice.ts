@@ -1,16 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Feature } from "geojson";
 
 interface mapState {
   hoveredFeature: string|number|null;
-  features: Feature[];
-  resultPage: number;
 }
 
 const initialState: mapState = {
   hoveredFeature: null,
-  features: [],
-  resultPage: 1,
 }
 
 const mapSlice = createSlice({
@@ -19,26 +14,10 @@ const mapSlice = createSlice({
   reducers: {
     setHoveredFeature: (state, action: PayloadAction<mapState['hoveredFeature']>) => {
       state.hoveredFeature = action.payload;
-    },
-    addLayer: (state, action: PayloadAction<Feature>) => {
-      state.features = [...state.features, action.payload];
-    },
-    editLayer: (state, action: PayloadAction<Feature>) => {
-      state.features = state.features
-        .map(feature => feature.id === action.payload.id ? action.payload : feature);
-    },
-    deleteLayer: (state, action: PayloadAction<number>) => {
-      state.features = state.features.filter(feature => feature.id !== action.payload);
-    },
-    resetLayer: (state) => {
-      state.features = [];
-    },
-    setResultPage: (state, action: PayloadAction<number>) => {
-      state.resultPage = action.payload;
     }
   }
 });
 
-export const { setHoveredFeature, addLayer, editLayer, deleteLayer, resetLayer, setResultPage } = mapSlice.actions;
+export const { setHoveredFeature } = mapSlice.actions;
 
 export default mapSlice.reducer;

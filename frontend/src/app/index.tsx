@@ -15,7 +15,7 @@ import Details from './components/details';
 function App() {
 
   const dispatch = useAppDispatch();
-  const { results } = useSelector((state: RootState) => state.search);
+  const { data } = useSelector((state: RootState) => state.search.records);
   const { record } = useParams();
 
   useEffect(() => {
@@ -26,14 +26,14 @@ function App() {
     <>
       <Bar/>
       <Grid2 container spacing={0}>
-        { results &&
-          <Slide direction="right" in={results !== null}>
+        { data &&
+          <Slide direction="right" in={data !== null}>
             <Grid2 size={3}>
               <Results/>
             </Grid2>
           </Slide>
         }
-        <Grid2 size={!results ? 12 : 9}>
+        <Grid2 size={!data ? 12 : 9}>
           <Map/>
         </Grid2>
       </Grid2>
