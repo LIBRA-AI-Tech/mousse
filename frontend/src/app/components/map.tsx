@@ -23,7 +23,6 @@ function Map() {
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
   const { isDrawOnMapActive } = useSelector((state: RootState) => state.ui);
   const [shouldMapFocus, setShouldMapFocus] = useState(false);
-  let activeTimeoutId: number|null = null;
   const mapRef = useRef<L.Map>(null);
 
   const geojsonMarkerOptions = {
@@ -37,20 +36,6 @@ function Map() {
   const setIcon = (_feature: Feature, latlng: L.LatLng) => {
     return L.circleMarker(latlng, {...geojsonMarkerOptions, fillColor: 'red'});
   };
-
-  const handleMouseOver = (id: string|number|undefined) => {
-    if (!id) return;
-    activeTimeoutId = setTimeout(() => {
-      dispatch(setHoveredFeature(id));
-    }, 500);
-  }
-
-  const handleMouseOut = () => {
-    if (activeTimeoutId) {
-      clearTimeout(activeTimeoutId);
-      activeTimeoutId = null;
-    }
-  }
 
   const geojsonCallback = (f: L.GeoJSON) => {
     if (!f)
@@ -140,10 +125,7 @@ function Map() {
             pointToLayer={setIcon}
             style={{fillOpacity: 0.4, color: "grey", weight: 1}}
             onEachFeature={(f: Feature, layer: L.Path) => {
-              // if (!hoveredFeature || !f.id) return;
-              layer.on('mouseover', () => handleMouseOver(f.id));
-              layer.on('mouseout', () => handleMouseOut());
-              layer.on('click', () => () => dispatch(setHoveredFeature(f.id || null)));
+              layer.on('click', () => dispatch(setHoveredFeature(f.id || null)));
             }}
           />
         </FeatureGroup>

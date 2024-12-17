@@ -13,22 +13,8 @@ export default function Results() {
   const { data } = useSelector((state: RootState) => state.search.records);
   const { status, currentPage, pageCount } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
-  let activeTimeoutId: number|null = null;
 
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
-
-  const handleMouseEnter = (id: string|number|undefined|null) => {
-    if (!id && id !== null) return;
-    activeTimeoutId = setTimeout(() => {
-      dispatch(setHoveredFeature(id));
-    }, 700);
-  };
-
-  const handleMouseLeave = () => {
-    if (activeTimeoutId) {
-      clearTimeout(activeTimeoutId);
-    }
-  }
 
   const truncateText = (text: string): string => {
     if (!text) return '';
@@ -62,8 +48,6 @@ export default function Results() {
               borderBottom: '1px solid rgba(150, 150, 150, 0.2)',
               cursor: 'pointer'
             }}
-            onMouseEnter={() => handleMouseEnter(f.id)}
-            onMouseLeave={() => handleMouseLeave()}
             onClick={() => dispatch(setHoveredFeature(f.id || null))}
           >
             <ListItemText
