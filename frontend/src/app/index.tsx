@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Grid2, Slide } from '@mui/material';
+import { Backdrop, CircularProgress, Grid2, Slide } from '@mui/material';
 import Map from './components/map';
 import Bar from './components/bar';
 import Info from './components/info';
@@ -16,6 +16,7 @@ function App() {
 
   const dispatch = useAppDispatch();
   const { data } = useSelector((state: RootState) => state.search.records);
+  const { status } = useSelector((state: RootState) => state.search);
   const { record } = useParams();
 
   useEffect(() => {
@@ -33,8 +34,14 @@ function App() {
             </Grid2>
           </Slide>
         }
-        <Grid2 size={!data ? 12 : 9}>
+        <Grid2 size={!data ? 12 : 9} sx={{position: 'relative'}}>
           <Map/>
+          <Backdrop
+            sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}
+            open={status === 'loading'}
+          >
+            <CircularProgress color="inherit" />
+          </Backdrop>
         </Grid2>
       </Grid2>
       { record &&
