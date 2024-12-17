@@ -98,6 +98,7 @@ export default function Results() {
         <Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>
         :
         <Pagination
+          disabled={status !== 'succeeded'}
           count={pageCount}
           showFirstButton={true}
           showLastButton={false}

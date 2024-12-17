@@ -167,6 +167,9 @@ const Details = ({recordId, open}: {recordId: string, open: boolean}) => {
             </ListItem>
           ))}
         </List>
+        { (!recordDetails.online || recordDetails.online.length === 0) && (
+          <Typography gutterBottom>—</Typography>
+        )}
       </DialogContent>
     </Dialog>
   );

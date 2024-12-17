@@ -65,6 +65,9 @@ function Map() {
       const actualFillColor = feature?.id === hoveredFeature ? 'red' : fillColor;
       const pathLayer = layer as L.Path;
       pathLayer.setStyle({fillColor: actualFillColor});
+      if (hoveredFeature && feature?.id === hoveredFeature) {
+        mapRef.current?.setView(L.geoJSON(feature).getBounds().getCenter());
+      }
     });
   }
 
