@@ -2,7 +2,7 @@ import { Middleware } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
 import { fetchRecords, submitSearch, setCurrentPage, addLayer, editLayer, deleteLayer } from "../features/search/searchSlice";
 
-/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (action) => {
   const result = next(action);
 

@@ -24,6 +24,11 @@ interface SearchState {
   cache: Record<number, Records>;
 }
 
+interface FetchRecordsErrorPayload {
+  usedCache: boolean;
+  data: Records;
+}
+
 const initialRecords: Records = {
   data: null,
   page: 1,
@@ -50,7 +55,11 @@ const initialState: SearchState = {
 }
 
 // Thunks
-export const fetchRecords = createAsyncThunk('records/search', 
+export const fetchRecords = createAsyncThunk<
+  recordSearchResponse,
+  RecordSearchRequest,
+  { rejectValue: FetchRecordsErrorPayload }
+>('records/search', 
   async (body: RecordSearchRequest, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
 

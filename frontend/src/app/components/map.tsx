@@ -3,8 +3,7 @@ import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, FeatureGroup, ZoomControl, GeoJSON } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import { Feature } from 'geojson';
-import L from 'leaflet';
-import type { DrawEvents } from 'leaflet';
+import * as L from 'leaflet';
 
 import { RootState, useAppDispatch } from '../store';
 import { setHoveredFeature } from '../../features/map/mapSlice';
@@ -56,23 +55,25 @@ function Map() {
     });
   }
 
-  const handleLayerCreate = ({layer}: DrawEvents.Created) => {
-    const id = layer._leaflet_id;
+  const handleLayerCreate = ({layer}: L.DrawEvents.Created) => {
+    const id = (layer as typeof layer & {_leaflet_id: number})._leaflet_id;
     dispatch(addLayer({id, ...layer.toGeoJSON()}));
   }
 
-  const handleLayerEdit = ({layers}: DrawEvents.Edited) => {
-    layers.eachLayer((layer: L.Layer) => {
-      const id = layer._leaflet_id;
-      if (id) {
-        dispatch(editLayer({id, ...layer.toGeoJSON()}));
+  const handleLayerEdit = ({layers}: L.DrawEvents.Edited) => {
+    layers.eachLayer((layer) => {
+      if (layer instanceof L.Polygon || layer instanceof L.Marker) {
+        const id = (layer as typeof layer & {_leaflet_id: number})._leaflet_id;
+        if (id) {
+          dispatch(editLayer({id, ...layer.toGeoJSON()}));
+        }
       }
     });
   }
 
-  const handleLayerDelete = ({layers}: DrawEvents.Deleted) => {
-    layers.eachLayer((layer: L.Layer) => {
-      const id = layer._leaflet_id;
+  const handleLayerDelete = ({layers}: L.DrawEvents.Deleted) => {
+    layers.eachLayer((layer) => {
+      const id = (layer as typeof layer & {_leaflet_id: number})._leaflet_id;
       if (id) {
         dispatch(deleteLayer(id));
       }
