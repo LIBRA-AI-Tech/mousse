@@ -38,6 +38,8 @@ const Search = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
 
+  const controllerRef = useRef<AbortController | null>(null);
+
   const handleFocus = () => {
     dispatch(toggleFilterSection(true));
   }
@@ -93,6 +95,9 @@ const Search = () => {
     if (analyzerJobId) {
       clearTimeout(analyzerJobId);
     }
+    if (controllerRef.current) {
+      controllerRef.current.abort("AbortAnalyze");
+    }
     if (!currentQuery.includes(prevQuery)) {
       setQueryAnalysis(null);
     }
@@ -100,9 +105,18 @@ const Search = () => {
       return;
     }
     const currentAnalyzerJobId = setTimeout(async () => {
-      const analyzerResponse = await analyzeQuery(currentQuery);
-      setQueryAnalysis(analyzerResponse.data);
-      applyAnalysisOnFilters(analyzerResponse.data);
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      try {
+        const analyzerResponse = await analyzeQuery(currentQuery, controller.signal);
+        setQueryAnalysis(analyzerResponse.data);
+        applyAnalysisOnFilters(analyzerResponse.data);
+      } catch (error) {
+        if (error !== 'AbortAnalyze') {
+          console.warn('Error analyzing query', error);
+        }
+      }
+      controllerRef.current = null;
     }, 500);
     setAnalyzerJobId(currentAnalyzerJobId)
   }

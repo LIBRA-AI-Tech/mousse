@@ -20,7 +20,7 @@ export interface AnalyzerResponse {
     phase: PhaseOptionType[];
 }
 
-export const analyzeQuery = async (query: string): Promise<ApiResponse<AnalyzerResponse>> => {
-    const response = await fetch(`${API_BASE_URL}/ner/analyze?query=${encodeURI(query)}`);
+export const analyzeQuery = async (query: string, signal: AbortSignal): Promise<ApiResponse<AnalyzerResponse>> => {
+    const response = await fetch(`${API_BASE_URL}/ner/analyze?query=${encodeURI(query)}`, {signal});
     return handleResponse<AnalyzerResponse>(response);
 }
