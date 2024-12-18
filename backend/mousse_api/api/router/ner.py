@@ -1,10 +1,12 @@
 import os
+import asyncio
+import contextlib
 import httpx
 import json
 import re
 from datetime import date
 from json_repair import repair_json
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,10 @@ from mousse_api.db import get_session
 from mousse_api.db.models import Countries
 
 from mousse_api.api.schemata.ner import NERAnalysisResponse, LLMResponse, Entities, TimeRange
+
+class ClientDisconnectedError(Exception):
+    """Custom exception for client disconnections."""
+    pass
 
 def summarize_schema(schema):
     props= [f"{key}: {item['description']}" for key, item in schema['properties'].items()]
@@ -59,7 +65,7 @@ MAX_REQUESTS = 3
 class JSON_NOT_FOUND(Exception):
     """Raised when the LLM response does not contain a valid JSON"""
 
-async def _chat_completion(query: str) -> str:
+async def _chat_completion(query: str, request: Request) -> str:
     url = "http://tgi:80/v1/chat/completions"
     model = os.getenv('LLM_MODEL')
     payload = {
@@ -75,12 +81,34 @@ async def _chat_completion(query: str) -> str:
     headers = { 'Content-Type': 'application/json' }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=payload, timeout=120)
+        task = asyncio.create_task(
+            client.post(url, headers=headers, json=payload, timeout=120)
+        )
+        async def monitor_disconnection():
+            try:
+                while True:
+                    message = await request.receive()
+                    if message['type'] == 'http.disconnect':
+                        break
+                task.cancel()
+            except asyncio.CancelledError:
+                pass
+        disconnect_task = asyncio.create_task(monitor_disconnection())
+
+        try:
+            response = await task
+        except asyncio.CancelledError:
+            raise ClientDisconnectedError("Client disconnected before request completion.")
+        finally:
+            disconnect_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await disconnect_task
+
         response = response.json()
+
     try:
         markdown_string = response['choices'][0]['message']['content']
-
-    except:
+    except (KeyError, IndexError, ValueError, TypeError) as e:
         markdown_string = ""
 
     return markdown_string
@@ -114,15 +142,17 @@ the core query text. The endpoint returns structured information for downstream 
     """,
     response_model=NERAnalysisResponse
 )
-async def ner(query: str, session: AsyncSession = Depends(get_session)):
+async def ner(request: Request, query: str = Query(..., description="Input text for analysis"), session: AsyncSession = Depends(get_session)):
 
     success = False
     retries = 0
-    while not success and retries < 3:
+    while not success and retries < 1:
         try:
-            markdown_string = await _chat_completion(query)
-        except Exception as e:
-            raise HTTPException(status_code=503, detail="LLM Server is down")
+            markdown_string = await _chat_completion(query, request)
+        except ClientDisconnectedError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except RuntimeError as e:
+            raise HTTPException(status_code=503, detail=str(e))
         try:
             try:
                 json_string = _extract_json(markdown_string)
