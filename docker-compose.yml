@@ -13,10 +13,6 @@ services:
       "tritonserver",
       "--model-repository=/models",
     ]
-    ports:
-      - "8880:8000" # HTTP port
-      - "8881:8001" # gRPC port
-      - "8882:8002" # Metrics port
     environment:
       MAX_LENGTH: ${MAX_LENGTH}
       TASK_DESCRIPTION: ${TASK_DESCRIPTION}
@@ -30,8 +26,6 @@ services:
   tgi:
     restart: unless-stopped
     image: ghcr.io/huggingface/text-generation-inference:2.4.1
-    ports:
-      - 8883:80
     environment:
       - QUANTIZE=eetq
       - MODEL_ID=${LLM_MODEL}
@@ -64,12 +58,10 @@ services:
       target: production
       args:
         VERSION: "${VERSION}"
-    ports:
-      - "${API_PORT}:8000"
     environment:
       - ROOT_PATH=${ROOT_PATH:-}
       - DB_URI=postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_USER_PASS}@db:5432/${POSTGRES_DB}
-- TRITON_URL=triton
+      - TRITON_URL=triton
       - TRITON_GRPC_PORT=8881
       - TRITON_MODEL_NAME=${INFERENCE_MODEL_NAME}
     volumes:
@@ -78,6 +70,7 @@ services:
 
   db:
     image: "mousse/postgres:16.4-postgis-pgvector"
+    restart: unless-stopped
     build:
       context: ./postgresql
     ports:

@@ -1,24 +1,36 @@
 services:
+  triton:
+    ports:
+      - "8880:8000" # HTTP port
+      - "8881:8001" # gRPC port
+      - "8882:8002" # Metrics port
+
+  tgi:
+    ports:
+      - 8883:80
+
   api:
+    ports:
+      - 8888:8000
     build:
       context: ./backend
       target: base
       args:
         - VERSION=${VERSION}
-    command: sh -c "python3 -m pip install --prefix=/usr/local -e . && exec uvicorn --host 0.0.0.0 --port 8000 mousse_api:app --reload"
+    command: sh -c "python3 -m pip install --prefix=/usr/local -e . && exec uvicorn --log-config logging.conf --host 0.0.0.0 --port 8000 mousse_api:app --reload"
     working_dir: /usr/local/api/
     volumes:
       - ./backend:/usr/local/api/
 
   frontend:
-    image: node:22.3-alpine3.20
+    image: node:23.4-alpine3.20
     ports:
       - 3000:8000
     working_dir: /srv/app
     volumes:
       - ./frontend:/srv/app
     environment:
-      - VITE_BACKEND_HOST_URL=http://localhost:${API_PORT}
+      - VITE_BACKEND_HOST_URL=http://localhost:8888
     command: >
       /bin/sh -c '
         yarn

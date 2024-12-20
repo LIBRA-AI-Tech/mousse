@@ -1,0 +1,28 @@
+services:
+
+  frontend-setup:
+    image: node:23.4-alpine3.20
+    volumes:
+      - ./frontend:/srv/app
+    working_dir: /srv/app
+    command: >
+      /bin/sh -c '
+        yarn install
+        yarn run build
+      '
+  
+  nginx:
+    image: nginx:1.27-alpine-slim
+    ports:
+      - ${NGINX_PORT}:80
+    restart: unless-stopped
+    depends_on:
+      frontend-setup:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    volumes:
+      - ./nginx-default.conf:/etc/nginx/templates/default.conf.template
+      - ./frontend/dist:/var/www/dist/
+    environment:
+      SERVER_DOMAIN: ${SERVER_DOMAIN}
