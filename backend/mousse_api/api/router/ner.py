@@ -146,7 +146,7 @@ async def ner(request: Request, query: str = Query(..., description="Input text 
 
     success = False
     retries = 0
-    while not success and retries < 1:
+    while not success and retries < MAX_REQUESTS:
         try:
             markdown_string = await _chat_completion(query, request)
         except ClientDisconnectedError as e:

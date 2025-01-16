@@ -7,15 +7,15 @@ type TimeRange = {
 }
 
 type Entities = {
-    location: string|null;
-    date: string|null;
+    location: string[]|null;
+    date: string[]|null;
 }
 
 export interface AnalyzerResponse {
     query: string;
     country: CountryType[];
     timerange: TimeRange,
-    cleanedQuery: string;
+    cleanedQuery: string[];
     entities: Entities;
     phase: PhaseOptionType[];
 }
