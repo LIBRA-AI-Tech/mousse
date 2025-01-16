@@ -8,7 +8,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import FilterBar from './filterBar';
 import { RootState, useAppDispatch } from '../store';
 import { toggleFilterSection } from '../../features/ui/uiSlice';
-import { resetResults, submitSearch } from '../../features/search/searchSlice';
+import { resetResults, submitSearch, initiateSearch } from '../../features/search/searchSlice';
 import { ClearIcon } from '@mui/x-date-pickers';
 
 import { analyzeQuery, AnalyzerResponse } from '../../services/analyzerApi';
@@ -19,6 +19,7 @@ const Search = () => {
 
   const dispatch = useAppDispatch();
   const { isFilterSectionOpen } = useSelector((state: RootState) => state.ui)
+  const { status } = useSelector((state: RootState) => state.search);
   const [isFilterToggleButtonPressed, setIsFilterToggleButtonPressed] = useState(false);
   const initialFilterValues: FilterValuesType = useMemo(() => ({
     country: [],
@@ -34,6 +35,7 @@ const Search = () => {
   const [queryAnalysis, setQueryAnalysis] = useState<AnalyzerResponse|null>(null);
 
   const [analyzerJobId, setAnalyzerJobId] = useState<number|null>(null);
+  const [isReadyForSubmit, setIsReadyFormSubmit] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const componentRef = useRef<HTMLDivElement>(null);
@@ -44,8 +46,16 @@ const Search = () => {
     dispatch(toggleFilterSection(true));
   }
 
-  const handleFormSubmit = useCallback((e?: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
+    if (queryAnalysis?.query === query) {
+      processFormSubmission();
+    } else {
+      dispatch( initiateSearch() );
+    }
+  }
+
+  const processFormSubmission = useCallback(() => {
     dispatch(toggleFilterSection(false));
     if (inputRef.current) {
       inputRef.current.blur();
@@ -91,6 +101,9 @@ const Search = () => {
 
   const handleQueryChange = (currentQuery: string) => {
     const prevQuery = query;
+    if (prevQuery !== currentQuery) {
+      setIsReadyFormSubmit(false);
+    }
     setQuery(currentQuery);
     if (analyzerJobId) {
       clearTimeout(analyzerJobId);
@@ -111,9 +124,11 @@ const Search = () => {
         const analyzerResponse = await analyzeQuery(currentQuery, controller.signal);
         setQueryAnalysis(analyzerResponse.data);
         applyAnalysisOnFilters(analyzerResponse.data);
+        setIsReadyFormSubmit(() => true);
       } catch (error) {
         if (error !== 'AbortAnalyze') {
           console.warn('Error analyzing query', error);
+          setIsReadyFormSubmit(() => true);
         }
       }
       controllerRef.current = null;
@@ -141,19 +156,23 @@ const Search = () => {
   }
 
   const applyStyling = (value: string) => {
-    if (!queryAnalysis || queryAnalysis.cleanedQuery === '' || queryAnalysis.cleanedQuery === value) {
+    if (!queryAnalysis || queryAnalysis.cleanedQuery.length === 0 || (queryAnalysis.cleanedQuery.length === 1 && queryAnalysis.cleanedQuery[0] === value)) {
       return [{start: 0, end: value.length, style: {}}];
     }
     const { cleanedQuery, entities } = queryAnalysis;
-    const parts = [cleanedQuery, entities.location, entities.date]
+    const location = entities.location ?? [null];
+    const dates = entities.date ?? [null];
+    const parts = [...cleanedQuery, ...location, ...dates]
       .filter((substring) => substring !== null)
       .map((substring, index) => ({
         start: value.indexOf(substring),
         end: value.indexOf(substring) + substring.length,
-        style: index === 0 ? {color: 'rgba(0,0,0,1)'} : {color: 'rgba(0,0,0,0.5)'},
+        style: index < cleanedQuery.length ? {color: 'rgba(0,0,0,1)'} : {color: 'rgba(0,0,0,0.5)'},
       }))
       .filter(({start}) => start !== -1);
+    console.log(cleanedQuery, entities.location, entities.date);
     parts.sort((a, b) => a.start - b.start);
+    console.log(parts)
 
     const filledParts: typeof parts = [];
     const defaultStyle = {color: 'rgba(0,0,0,0.3)'};
@@ -163,6 +182,7 @@ const Search = () => {
       if (start < element.start) {
         filledParts.push({start, end: element.start, style: defaultStyle});
       }
+      if (start > element.start) continue;
       filledParts.push(element);
       start = element.end;
     }
@@ -174,10 +194,10 @@ const Search = () => {
 
   useEffect(() => {
     if (resetFlag) {
-      handleFormSubmit();
+      processFormSubmission();
       setResetFlag(false);
     }
-  }, [resetFlag, handleFormSubmit]);
+  }, [resetFlag, processFormSubmission]);
 
   useEffect(() => {
     // Add event listener when the component is mounted
@@ -188,6 +208,14 @@ const Search = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [handleClickOutside]);
+
+  useEffect(() => {
+    if (isReadyForSubmit) {
+      if (status === 'pending') {
+        processFormSubmission();
+      }
+    }
+  }, [isReadyForSubmit, status, processFormSubmission]);
 
   // useEffect(() => {
   //   if (!queryAnalysis) return;

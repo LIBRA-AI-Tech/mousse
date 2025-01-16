@@ -38,7 +38,7 @@ function App() {
           <Map/>
           <Backdrop
             sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}
-            open={status === 'loading'}
+            open={status === 'loading' || status === 'pending'}
           >
             <CircularProgress color="inherit" />
           </Backdrop>

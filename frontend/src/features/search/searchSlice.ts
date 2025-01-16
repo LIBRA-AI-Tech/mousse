@@ -19,7 +19,7 @@ interface SearchState {
   currentPage: number;
   pageCount: number;
   features: Feature[]
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  status: 'idle' | 'pending' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
   cache: Record<number, Records>;
 }
@@ -92,6 +92,9 @@ const searchSlice = createSlice({
   name: 'search',
   initialState,
   reducers: {
+    initiateSearch: (state) => {
+      state.status = 'pending';
+    },
     resetResults: (state) => Object.assign(state, initialState),
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
@@ -144,6 +147,6 @@ const searchSlice = createSlice({
   }
 });
 
-export const { resetResults, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer } = searchSlice.actions;
+export const { resetResults, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
 
 export default searchSlice.reducer;

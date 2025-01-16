@@ -46,11 +46,13 @@ function Map() {
     f.eachLayer((layer: L.Layer) => {
       const geoJsonLayer = layer as L.GeoJSON;
       const feature = geoJsonLayer.feature as GeoJSON.Feature;
-      const actualFillColor = feature?.id === hoveredFeature ? 'red' : fillColor;
+      const style = feature?.id === hoveredFeature
+        ? {color: 'red', fillOpacity: 0.3}
+        : {color: 'grey', fillOpacity: 0};
       const pathLayer = layer as L.Path;
-      pathLayer.setStyle({fillColor: actualFillColor});
+      pathLayer.setStyle(style);
       if (hoveredFeature && feature?.id === hoveredFeature) {
-        mapRef.current?.setView(L.geoJSON(feature).getBounds().getCenter());
+        mapRef.current?.fitBounds(L.geoJSON(feature).getBounds());
       }
     });
   }
@@ -124,7 +126,7 @@ function Map() {
             ref={geojsonCallback}
             data={data}
             pointToLayer={setIcon}
-            style={{fillOpacity: 0.4, color: "grey", weight: 1}}
+            style={{fillColor, weight: 1}}
             onEachFeature={(f: Feature, layer: L.Path) => {
               layer.on('click', () => dispatch(setHoveredFeature(f.id || null)));
             }}

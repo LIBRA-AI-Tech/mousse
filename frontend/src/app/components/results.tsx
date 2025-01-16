@@ -38,7 +38,8 @@ export default function Results() {
 
   return (
     <Paper sx={{height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto'}}>
-      <List sx={status === 'loading' ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
+      <List sx={(status === 'loading' || status === 'pending') ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
+        <Typography variant="h6" sx={{mx: 2}} color="textSecondary">Results</Typography>
         {data?.features.map((f) => (
           <ListItem
             key={`feature-${f.id}`}
