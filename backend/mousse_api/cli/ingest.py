@@ -6,7 +6,8 @@ import numpy as np
 from uuid import uuid4
 import re
 import json
-from shapely.geometry import Polygon, Point, MultiPolygon
+import shapely
+from shapely.geometry import Polygon, Point, Polygon
 from geoalchemy2 import WKTElement, Geometry
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, VARCHAR, ENUM, TSTZRANGE, JSON
@@ -140,12 +141,18 @@ def _bbox_to_point(bbox):
     east, north = bbox['east'], bbox['north']
     return Point([east, north])
 
+def _is_point(geom):
+    tolerance = 0.01
+    if abs(geom['east'] - geom['west']) < tolerance and abs(geom['north'] - geom['south']) < tolerance:
+        return True
+    return False
+
 def _location_to_geom(location):
-    if len(location) == 1:
-        if location[0]['east'] == location[0]['west'] and location[0]['north'] == location[0]['south']:
-            return _bbox_to_point(location[0])
-        return _bbox_to_polygon(location[0])
-    return MultiPolygon([_bbox_to_polygon(bbox) for bbox in location])
+    tolerance = 0.01
+    geom = shapely.union_all([_bbox_to_point(bbox) if _is_point(bbox) else _bbox_to_polygon(bbox) for bbox in location])
+    if not shapely.is_valid(geom):
+        geom = shapely.make_valid(geom)
+    return geom
 
 def _location_to_wkt(location):
     return WKTElement(_location_to_geom(location).wkt, srid=4326)

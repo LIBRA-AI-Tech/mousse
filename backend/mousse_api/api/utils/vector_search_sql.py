@@ -23,14 +23,14 @@ class SqlConstuctor():
             SELECT record_uuid
             FROM core."location"
             WHERE ST_Within(
-                ST_MakeValid(geometry),
-                (SELECT ST_Simplify(ST_Union(geometry), 0.1) FROM core.countries WHERE "code" IN (%(country_list)s))
+                geometry,
+                (SELECT ST_MakeValid(ST_Simplify(ST_Union(geometry), 0.1)) FROM core.countries WHERE "code" IN (%(country_list)s))
             )
         """,
         'features': """
             SELECT record_uuid
             FROM core."location"
-            WHERE ST_Within(ST_MakeValid(geometry), ST_GeomFromText(%(wkt)s, 4326))
+            WHERE ST_Within(geometry, ST_GeomFromText(%(wkt)s, 4326))
         """,
         'daterange': """
             SELECT record_uuid
