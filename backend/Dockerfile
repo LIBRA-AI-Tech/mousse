@@ -28,11 +28,13 @@ COPY --from=build-stage-1 /usr/local /usr/local
 FROM base AS production
 
 RUN mkdir /usr/local/api/
-COPY setup.py requirements.txt /usr/local/api/
+COPY setup.py requirements.txt alembic.ini /usr/local/api/
 COPY mousse_api /usr/local/api/mousse_api
 
 COPY docker-command.sh /usr/local/bin/
 RUN chmod a+x /usr/local/bin/docker-command.sh
+
+RUN cd /usr/local/api && alembic upgrade head
 
 RUN mkdir /var/local/api
 WORKDIR /var/local/api
