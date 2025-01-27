@@ -47,8 +47,8 @@ function Map() {
       const geoJsonLayer = layer as L.GeoJSON;
       const feature = geoJsonLayer.feature as GeoJSON.Feature;
       const style = feature?.id === hoveredFeature
-        ? {color: 'red', fillOpacity: 0.3}
-        : {color: 'grey', fillOpacity: 0};
+        ? {color: 'grey', fillOpacity: 0.3}
+        : {color: 'red', fillOpacity: 0};
       const pathLayer = layer as L.Path;
       pathLayer.setStyle(style);
       if (hoveredFeature && feature?.id === hoveredFeature) {
