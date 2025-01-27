@@ -34,8 +34,6 @@ COPY mousse_api /usr/local/api/mousse_api
 COPY docker-command.sh /usr/local/bin/
 RUN chmod a+x /usr/local/bin/docker-command.sh
 
-RUN cd /usr/local/api && alembic upgrade head
-
 RUN mkdir /var/local/api
 WORKDIR /var/local/api
 RUN mkdir ./logs
