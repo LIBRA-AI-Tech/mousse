@@ -56,16 +56,17 @@ const Search = () => {
   }
 
   const processFormSubmission = useCallback(() => {
+    const { cleanedQuery } = queryAnalysis || {cleanedQuery: null};
     dispatch(toggleFilterSection(false));
     if (inputRef.current) {
       inputRef.current.blur();
     }
     if (query !== '') {
-      dispatch(submitSearch({query, filterValues}));
+      dispatch(submitSearch({query: (cleanedQuery && cleanedQuery.length > 0) ? cleanedQuery.join(' ') : query, filterValues}));
     } else {
       dispatch(resetResults());
     }
-  }, [dispatch, query, filterValues]);
+  }, [dispatch, query, queryAnalysis, filterValues]);
 
   const handleFilterChange = ({name, value}: {name: string, value: FilterValuesType['country']|FilterValuesType['phase']|Dayjs|null}) => {
     setFilterValues({...filterValues, [name]: value});
@@ -170,9 +171,7 @@ const Search = () => {
         style: index < cleanedQuery.length ? {color: 'rgba(0,0,0,1)'} : {color: 'rgba(0,0,0,0.5)'},
       }))
       .filter(({start}) => start !== -1);
-    console.log(cleanedQuery, entities.location, entities.date);
     parts.sort((a, b) => a.start - b.start);
-    console.log(parts)
 
     const filledParts: typeof parts = [];
     const defaultStyle = {color: 'rgba(0,0,0,0.3)'};
@@ -216,25 +215,6 @@ const Search = () => {
       }
     }
   }, [isReadyForSubmit, status, processFormSubmission]);
-
-  // useEffect(() => {
-  //   if (!queryAnalysis) return;
-  //   const updatedFilterValues = {...filterValues};
-  //   if (queryAnalysis.country) {
-  //     updatedFilterValues.country = queryAnalysis.country;
-  //   }
-  //   // if (queryAnalysis) {
-  //   //   setAutoFilterValues((prevValues) => ({
-  //   //     ...prevValues,
-  //   //     country: queryAnalysis.country,
-  //   //     startDate: dayjs(queryAnalysis.timerange.start),
-  //   //     endDate: dayjs(queryAnalysis.timerange.end),
-  //   //     phase: queryAnalysis.phase,
-  //   //   }));
-  //   // } else {
-  //   //   handleAutoFiltersReset();
-  //   // }
-  // }, [queryAnalysis, filterValues, handleAutoFiltersReset]);
 
   return (
     <div ref={componentRef} style={{ position: 'relative' }}>
