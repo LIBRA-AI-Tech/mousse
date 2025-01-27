@@ -102,6 +102,8 @@ services:
     entrypoint: bash -c "alembic upgrade head"
     profiles:
       - manual
+    volumes:
+      - ./data:/var/local/data:ro
   
   ingest:
     image: "mousse/search-service:${VERSION}"
