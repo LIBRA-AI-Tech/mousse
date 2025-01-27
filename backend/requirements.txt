@@ -15,3 +15,4 @@ pydantic-geojson==0.1.1
 json-repair==0.30.2
 httpx==0.28.1
 tritonclient[grpc]==2.52.0
+tqdm==4.67.1

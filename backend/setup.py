@@ -29,7 +29,11 @@ setuptools.setup(
         "json-repair>=0.30.2,<0.31.0",
         "httpx>=0.28.0,<0.29.0",
         "tritonclient[grpc]>=2.52.0,<2.53.0",
+        "tqdm>=4.67.0,<4.68.0",
     ],
     python_requires='>=3.10',
+    entry_points = {
+        'console_scripts': ['mousse=mousse_api.cli.bulk_ingest:cli']
+    },
     zip_safe=False,
 )
