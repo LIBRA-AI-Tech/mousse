@@ -44,21 +44,21 @@ To handle the simultaneous use of the spatial and semantic indices effectively, 
 
 ```mermaid
 architecture-beta
-    group api(cloud)[API]
-    group front(internet)[Frontend]
+    group api[API]
+    group front[Frontend]
     group llm[TGI] in api
     group inference[Triton Server] in api
     group db[Database] in api
 
-    service postgres(logos:postgraphile)[PostgreSQL] in db
+    service postgres(database)[PostgreSQL] in db
     service disk2(disk)[DiskANN] in db
-    service server(logos:fastapi-icon)[FastAPI] in api
-    service triton(logos:nvidia) in inference
-    service tgi(logos:hugging-face-icon)[HuggingFace] in llm
+    service server(server)[FastAPI] in api
+    service triton(server) in inference
+    service tgi(server)[HuggingFace] in llm
 
-    service react(logos:preact)[ReactJS] in front
+    service react(internet)[ReactJS] in front
 
-    service gateway(logos:nginx)[nginx]
+    service gateway(cloud)[nginx]
 
     react:B -- T:gateway
     gateway:R -- L:server
