@@ -23,8 +23,8 @@ class LLMResponse(BaseModel):
     periodStart: date | None = Field(None, description="Period start in ISO 8601 format, filled in only if date-related entity corresponds to absolute date range, else null")
     periodEnd: date | None = Field(None, description="Period end in ISO 8601 format, filled in only if date-related entity corresponds to absolute date range, else null")
     phase: list[int] | None = Field(None, description="A list of months indicated by integers from 1 to 12, filled in only if date-related entity corresponds to a reccuring yearly period. It should be null in case `periodStart` or `periodEnd` has been extracted.", min=1, max=12)
-    location: list[str] | None = Field(None, description="A list of location-related entities **exactly** as found in the prompt")
-    date: list[str] | None = Field(None, description="A list of date-related entities **exactly** as found in the prompt")
+    location: list[str] | None = Field(None, description="A list of location-related entities")
+    date: list[str] | None = Field(None, description="A list of date-related entities")
     cleanedQuery: list[str] = Field(..., description="A list of parts of the query cleaned from the extracted date-related entity and the location-related entity and their related parts (e.g. prepositions)")
 
 class NERAnalysisResponse(BaseModel):

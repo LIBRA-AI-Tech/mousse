@@ -40,7 +40,7 @@ def numerics_to_months(month_list: list[int] | None):
         {"kind": "Month", "value": "11", "label": "November"},
         {"kind": "Month", "value": "12", "label": "December"},
     ]
-    return [mapping[month] for month in month_list]
+    return [mapping[month - 1] for month in month_list if month > 0 and month < 13]
 
 router = APIRouter(
     tags=["NER"],
@@ -48,12 +48,13 @@ router = APIRouter(
 )
 
 SYSTEM_PROMPT = """
-You are a Name-Entity Recognition system designed to extract and process location and date-related entities. Follow these steps:
-1. Detect location-related and date-related entities.
-2. Map detected locations to their corresponding country or list of countries.
-3. Recognize whether the date-related entity corresponds to an absolute date range or a reccuring yearly period, e.g. season of the year. In the first case of date range, transform the date-related entity into ISO 8601 date format range. Use the current date %(today)s as a reference for relative time references. In the case of yearly period, extract the corresponding months, indicated by an integer starting from 1, e.g. 8 for August.
-4. Find all syntactical relations of the detected entities (e.g. prepositions) and clean the query from them, i.e detected entities plus their relations in the prompt.
-5. Summarize the result in a single JSON, with the following: %(schema)s
+You are a Name-Entity Recognition system specialized on extraction and processing of location- and date-related entities. Follow these steps:
+1. Detect separately all location-related and all date-related entities in user input.
+2. Map detected location-related entities to their corresponding country or list of countries.
+3. Classify the date-related entities into absolute date range or a **reccuring** yearly period. In the first case of date range, transform the date-related entity into ISO 8601 date format range. Use the current date %(today)s as a reference for relative time references. In the second case of reccuring yearly period, extract the corresponding months, indicated by an integer starting from 1, e.g. 8 for August.
+4. Find all syntactical relations of the detected date-related entities (e.g. prepositions) and clean the query from them, i.e. detected entities plus their relations in the prompt.
+5. Repeat the same for the location-related entities only if the entity is already a country. 
+6. Summarize the result in a single JSON, with the following: %(schema)s
 
 **Special attention on this**: Return only the JSON without any further explanation or notes.
 """ % {"today": str(date.today()), "schema": summarize_schema(LLMResponse.model_json_schema())}
