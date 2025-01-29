@@ -70,6 +70,21 @@ const Search = () => {
 
   const handleFilterChange = ({name, value}: {name: string, value: FilterValuesType['country']|FilterValuesType['phase']|Dayjs|null}) => {
     setFilterValues({...filterValues, [name]: value});
+    if (name === 'country') {
+      if (queryAnalysis?.entities.location) {
+        setQueryAnalysis({
+          ...queryAnalysis,
+          cleanedQuery: [...queryAnalysis.cleanedQuery, ...queryAnalysis.entities.location]
+        });
+      }
+    } else {
+      if (queryAnalysis?.entities.date) {
+        setQueryAnalysis({
+          ...queryAnalysis,
+          cleanedQuery: [...queryAnalysis.cleanedQuery, ...queryAnalysis.entities.date]
+        });
+      }
+    }
     if (!value || (Array.isArray(value) && value.length === 0)) {
       const idx = manualSetFilters.indexOf(name);
       if (idx !== -1)
