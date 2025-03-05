@@ -48,16 +48,42 @@ router = APIRouter(
 )
 
 SYSTEM_PROMPT = """
-You are a Name-Entity Recognition system specialized on extraction and processing of location- and date-related entities. Follow these steps:
-1. Detect separately all location-related and all date-related entities in user input.
-2. Map detected location-related entities to their corresponding country or list of countries.
-3. Classify the date-related entities into absolute date range or a **reccuring** yearly period. In the first case of date range, transform the date-related entity into ISO 8601 date format range. Use the current date %(today)s as a reference for relative time references. In the second case of reccuring yearly period, extract the corresponding months, indicated by an integer starting from 1, e.g. 8 for August.
-4. Find all syntactical relations of the detected date-related entities (e.g. prepositions) and clean the query from them, i.e. detected entities plus their relations in the prompt.
-5. Repeat the same for the location-related entities only if the entity is already a country. 
-6. Summarize the result in a single JSON, with the following: %(schema)s
+You are a Name-Entity Recognition system specialized in extracting and processing location and date related entities from text. Follow these steps:
 
-**Special attention on this**: Return only the JSON without any further explanation or notes.
+1. Extract exact entities from the text:
+   - Location entities: Extract only if they are specific place names (not general terms like "sample locations")
+   - Date entities: Extract dates exactly as they appear in the text
+   Both should be extracted exactly as mentioned in the text, without modifications.
+
+2. For each detected location entity:
+   - Map it to corresponding country name(s)
+   - If the location itself is a country, include it in the country list
+   - If country cannot be determined, return an empty list
+
+3. For date-related entities, classify them into one of two categories:
+   a) Absolute date range:
+      - Convert to ISO 8601 date format (YYYY-MM-DD)
+      - Set periodStart and periodEnd
+      - Set phase to null
+      - Use %(today)s as reference for relative dates
+   
+   b) Recurring yearly period:
+      - Set phase as list of integers (1-12) representing months
+      - Set periodStart and periodEnd to null
+
+4. Clean the query by removing:
+   - Detected date entities and their syntactic relations (e.g., prepositions)
+   - Location entities (only if they are countries) and their relations
+   Return the remaining parts as a list of strings
+
+Return the results in JSON format matching this schema: %(schema)s
+
+IMPORTANT:
+- Always return all fields defined in the schema
+- Return only the JSON without any additional explanation or notes
+- Ensure the JSON is properly formatted and parsable
 """ % {"today": str(date.today()), "schema": summarize_schema(LLMResponse.model_json_schema())}
+
 
 MAX_TOKENS = 128
 
