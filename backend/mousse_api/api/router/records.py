@@ -9,34 +9,12 @@ from mousse_api.db.models import RawRecord
 from mousse_api.api.schemata.records import SearchBody, SearchJSONResponse, SearchGeoJSONResponse, RecordDetails
 from mousse_api.api.utils.vector_search_sql import SqlConstuctor
 from mousse_api.api.utils.inference import inference
+from mousse_api.api.utils.helpers import epoch_to_months
 
 router = APIRouter(
     tags=["Records"],
     prefix="/records",
 )
-
-def _epoch_to_months(epoch):
-    """
-    Converts an epoch representation to a list of months.
-
-    The function maps season names (e.g., 'summer', 'winter') to their corresponding 
-    months and includes any directly specified month values in the epoch input. 
-    Duplicate months are removed, and the final result is a unique list of months.
-
-    Args:
-        epoch (list): A list containing season names or month numbers. 
-            Each item in the list must have a `value` attribute.
-
-    Returns:
-        list[int]: A list of unique month numbers corresponding to the input epoch.
-    """
-    epoch = [e.value for e in epoch]
-    seasons = {'summer': [6, 7, 8], 'autumn': [9, 10, 11], 'winter': [12, 1, 2], 'spring': [3, 4, 5]}
-    months = [int(m) for m in epoch if m not in seasons]
-    for season in seasons:
-        if season in epoch:
-            months.extend(seasons[season])
-    return list(set(months))
 
 async def _get_record_by_uuid(uuid: UUID, session: AsyncSession) -> dict | None:
     stmt = select(
@@ -109,7 +87,7 @@ async def search(body: SearchBody, session: AsyncSession = Depends(get_session))
         end_date = body.dateRange.end.isoformat() if body.dateRange.end is not None else '9999-12-31'
         sql.add('daterange', start_date, end_date)
     if body.epoch is not None and len(body.epoch) > 0:
-        months = _epoch_to_months(body.epoch)
+        months = epoch_to_months(body.epoch)
         sql.add('epoch', months)
 
     embedding = inference([body.query])

@@ -1,5 +1,6 @@
 volumes:
   postgres_data:
+  valkey_data:
 
 services:
   triton:
@@ -22,6 +23,19 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  cache:
+    restart: unless-stopped
+    image: valkey/valkey:8.1-alpine3.21
+    volumes:
+      - valkey_data:/data
+    environment:
+      VALKEY_EXTRA_FLAGS: --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   tgi:
     restart: unless-stopped
@@ -52,6 +66,8 @@ services:
         condition: service_healthy
       tgi:
         condition: service_healthy
+      cache:
+        condition: service_healthy
     image: "mousse/search-service:${VERSION}"
     build:
       context: ./backend
@@ -64,6 +80,7 @@ services:
       - TRITON_URL=triton
       - TRITON_GRPC_PORT=8881
       - TRITON_MODEL_NAME=${INFERENCE_MODEL_NAME}
+      - CACHE_URL=cache:6379
     volumes:
       - ./data:/var/local/data:ro
       - ./model-repository:/var/local/models:ro
@@ -116,6 +133,6 @@ services:
     environment:
       - DB_URI=postgresql+asyncpg://${POSTGRES_APP_USER}:${POSTGRES_APP_USER_PASS}@db:5432/${POSTGRES_DB}
     working_dir: /usr/local/api
-    entrypoint: [ "bash", "-c", "mousse bulk-ingest $1", "--" ]
+    entrypoint: [ "bash", "-c", "mousse $1 $2", "--" ]
     profiles:
       - manual
