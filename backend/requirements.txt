@@ -17,3 +17,4 @@ httpx==0.28.1
 tritonclient[grpc]==2.52.0
 tqdm==4.67.1
 scikit-learn==1.6.1
+requests==2.32.3

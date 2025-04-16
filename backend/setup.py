@@ -31,6 +31,7 @@ setuptools.setup(
         "tritonclient[grpc]>=2.52.0,<2.53.0",
         "tqdm>=4.67.0,<4.68.0",
         "scikit-learn>=1.6.1,<1.7.0",
+        "requests>=2.32.0,<2.33.0",
     ],
     python_requires='>=3.10',
     entry_points = {

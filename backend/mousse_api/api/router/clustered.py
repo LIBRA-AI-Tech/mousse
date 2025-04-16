@@ -1,19 +1,22 @@
+import json
+import numpy as np
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mousse_api.db import get_session
-from mousse_api.api.schemata.records import MinimumSearchBody
+from mousse_api.api.schemata.clusters import ClusterResponse, ClusterSearchBody
 from mousse_api.api.utils.vector_search_sql import SqlConstuctor
 from mousse_api.api.utils.inference import inference
 from mousse_api.api.utils.helpers import epoch_to_months
+from mousse_api.api.utils.cluster import ClusterClassifier
 
 router = APIRouter(
     tags=["Clusters"],
     prefix="/clustered",
 )
 
-@router.post('/search', summary="Clustered Search", description="Get clustered search results based on the given query.")
-async def clustered_search(body: MinimumSearchBody, session: AsyncSession = Depends(get_session)):
+@router.post('/search', summary="Clustered Search", description="Get clustered search results based on the given query.", response_model=list[ClusterResponse])
+async def clustered_search(body: ClusterSearchBody, session: AsyncSession = Depends(get_session)):
     sql = SqlConstuctor(threshold=0.5, results_per_page=1000)
     if body.features is not None and len(body.features) > 0:
         sql.add('spatial', body.features)
@@ -34,5 +37,18 @@ async def clustered_search(body: MinimumSearchBody, session: AsyncSession = Depe
     results = await session.execute(stmt)
 
     data = [dict(row) for row in results.mappings()]
-    return data
+    text_ids = [str(r['uuid']) for r in data]
+    texts = [r['title'] for r in data]
+    projections = np.array([json.loads(r['vector']) for r in data])
+    scores = [float(r['score']) for r in data]
+    classifier = ClusterClassifier(texts=texts, text_ids=text_ids, projections=projections, scores=scores)
 
+    clusters = classifier.fit(n_clusters=body.numberOfClusters)
+    clusters_reduced = [ClusterResponse(
+        id=cluster.id,
+        representativeTitle=cluster.representative_text,
+        summary=cluster.summary,
+        elementCount=len(cluster.elements)
+    ) for cluster in clusters]
+
+    return clusters_reduced

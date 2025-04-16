@@ -72,7 +72,7 @@ class ClusterClassifier:
         self.scores = scores if scores is not None else [0.0] * len(texts)
         self.projected_embeddings = projections
 
-        self.summarization_endpoint = "http:/tgi/v1/chat/completions"
+        self.summarization_endpoint = "http://tgi/v1/chat/completions"
 
     def fit(
         self,
