@@ -7,3 +7,4 @@ from .raw_record import RawRecord
 from .location import Location
 from .embedding import Embedding
 from .countries import Countries
+from .lower_dim import LowerDim

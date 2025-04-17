@@ -256,3 +256,18 @@ class SqlConstuctor():
             FROM records
         """.strip()
         return text(stmt).bindparams(*self.parameters)
+    
+    def create_clustering(self, embedding: list[float]) -> TextClause:
+        solo = not self._add_ensemble_cte()
+        self._add_embedding_cte(embedding, solo)
+        self._add_records_cte(1 - self.threshold)
+        ctes = ",\n".join([f"{name} AS ({stmt})" for name, stmt in self.queries.items()])
+        stmt = f"""
+            WITH {ctes}
+            SELECT
+                records.uuid, lower_dim.title_cleaned AS title, records.score, to_json(lower_dim.vector) AS vector
+            FROM records
+            JOIN core.lower_dim
+            ON core.lower_dim.record_uuid = records.uuid
+        """.strip()
+        return text(stmt).bindparams(*self.parameters)

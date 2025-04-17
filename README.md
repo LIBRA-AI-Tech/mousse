@@ -114,7 +114,12 @@ Data for ingestion should to be stored in (partitioned) Parquet files before bei
 
 To ingest data into the database, a second ephemeral container id provided. Assuming the Parquet files are located in a directory with an absolute path `/path/to/parquet`, you can start the ingestion process with:
 ```sh
-docker compose --profile manual run -v /path/to/parquet:/data ingest /data
+docker compose --profile manual run -v /path/to/parquet:/data ingest bulk /data
+```
+
+To ingest the lower dimensional vectors, run
+```sh
+docker compose --profile manual run -v /path/to/parquet:/data ingest lower-dim /data
 ```
 
 ### Development deployment
