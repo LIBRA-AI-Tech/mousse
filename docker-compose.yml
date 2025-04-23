@@ -81,6 +81,7 @@ services:
       - TRITON_GRPC_PORT=8881
       - TRITON_MODEL_NAME=${INFERENCE_MODEL_NAME}
       - CACHE_URL=cache:6379
+      - CHAT_COMPLETION_URL=http://tgi:80
     volumes:
       - ./data:/var/local/data:ro
       - ./model-repository:/var/local/models:ro

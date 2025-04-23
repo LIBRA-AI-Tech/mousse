@@ -93,7 +93,9 @@ class JSON_NOT_FOUND(Exception):
     """Raised when the LLM response does not contain a valid JSON"""
 
 async def _chat_completion(query: str, request: Request) -> str:
-    url = "http://tgi:80/v1/chat/completions"
+    url = "{chat_completion_url}/v1/chat/completions".format(
+        chat_completion_url=os.getenv("CHAT_COMPLETION_URL")
+    )
     model = os.getenv('LLM_MODEL')
     payload = {
         "model": model,
