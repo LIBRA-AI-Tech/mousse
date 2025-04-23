@@ -1,7 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { Cluster, ClusteredRequest, clusteredSearch, clusterMembers } from "../../services/clusteredApi";
-import { RecordSearchRequest, recordSearchResponse } from '../../services/recordsApi';
-import { RootState } from '../../app/store';
+import { Cluster, ClusteredRequest, clusteredSearch } from "../../services/clusteredApi";
 
 interface ClusteredState {
   status: 'idle' | 'pending' | 'succeeded' | 'failed';
@@ -23,20 +21,6 @@ export const fetchClusteredResults = createAsyncThunk(
   'records/clusteredSearch',
   async (body: ClusteredRequest) => {
     const response = await clusteredSearch(body);
-    return response.data;
-  }
-)
-
-export const fetchRecordsByClusterId = createAsyncThunk<
-  recordSearchResponse,
-  RecordSearchRequest,
-  { rejectValue: RecordSearchRequest }
->(
-  'records/clusteredSearchById',
-  async (body: RecordSearchRequest, {getState}) => {
-    const state = getState() as RootState
-    const { hoveredCluster } = state.clustered;
-    const response = await clusterMembers(hoveredCluster, body);
     return response.data;
   }
 )
