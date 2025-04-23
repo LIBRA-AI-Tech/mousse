@@ -11,12 +11,15 @@ import { RootState, useAppDispatch } from './store';
 
 import 'simplebar-react/dist/simplebar.min.css';
 import Details from './components/details';
+import Sidebar from './components/sidebar'
+import ClusteredGrid from './components/clusteredGrid'
 
 function App() {
 
   const dispatch = useAppDispatch();
   const { data } = useSelector((state: RootState) => state.search.records);
   const { status } = useSelector((state: RootState) => state.search);
+  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { record } = useParams();
 
   useEffect(() => {
