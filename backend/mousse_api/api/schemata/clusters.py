@@ -8,8 +8,8 @@ class ClusterResponse(BaseModel):
     """
 
     id: int = Field(..., description="The unique (within this request) identifier for the cluster.")
-    representativeTitle: str = Field(..., description="The title of the representative text for the cluster.")
-    summary: str = Field(..., description="A summary of the cluster.")
+    representativeTitle: str|None = Field(..., description="The title of the representative text for the cluster.")
+    summary: str|None = Field(..., description="A summary of the cluster.")
     elementCount: int = Field(..., description="The number of elements in the cluster.")
 
 class ClusterSearchBody(MinimumSearchBody):
