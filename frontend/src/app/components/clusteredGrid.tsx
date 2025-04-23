@@ -11,7 +11,7 @@ const ClusteredGrid = () => {
   const applyStyles = (hoveredId: number) => {
     const hoverStyles = {outlineColor: (theme: Theme) => theme.palette.grey[600], outlineWidth: '.15rem', outlineStyle: 'solid', cursor: 'pointer'};
     if (hoveredCluster === hoveredId) {
-      return {'&:hover': hoverStyles, ...hoverStyles, padding: '.8rem .7rem', boxShadow: '0px 0px 10px rgba(0,0,0,0.1)'}
+      return {'&:hover': hoverStyles, ...hoverStyles, backgroundColor: 'rgba(255,236,190,0.3)', padding: '.8rem .7rem', boxShadow: '0px 0px 10px rgba(0,0,0,0.1)'}
     }
     return {'&:hover': hoverStyles, padding: '.8rem .7rem', boxShadow: '0px 0px 10px rgba(0,0,0,0.1)'}
   }
