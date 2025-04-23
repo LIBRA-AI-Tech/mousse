@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import requests
@@ -72,7 +73,9 @@ class ClusterClassifier:
         self.scores = scores if scores is not None else [0.0] * len(texts)
         self.projected_embeddings = projections
 
-        self.summarization_endpoint = "http://tgi/v1/chat/completions"
+        self.summarization_endpoint = "{chat_completion_url}/v1/chat/completions".format(
+            chat_completion_url=os.getenv("CHAT_COMPLETION_URL")
+        )
 
     def fit(
         self,
