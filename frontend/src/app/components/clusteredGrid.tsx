@@ -23,7 +23,6 @@ const ClusteredGrid = () => {
             </Tooltip>
           </Grid>
           <Typography>{r.representativeTitle}</Typography>
-          <Typography sx={{width: '35ch'}}></Typography>
         </Paper>
       ))}
     </Grid>

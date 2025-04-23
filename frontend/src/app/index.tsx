@@ -19,6 +19,7 @@ function App() {
   const dispatch = useAppDispatch();
   const { data } = useSelector((state: RootState) => state.search.records);
   const { status } = useSelector((state: RootState) => state.search);
+  const { status: cstatus } = useSelector((state: RootState) => state.clustered);
   const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { record } = useParams();
 
@@ -43,7 +44,7 @@ function App() {
           {clusteredMode ? <ClusteredGrid /> : <Map/>}
           <Backdrop
             sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}
-            open={status === 'loading' || status === 'pending'}
+            open={(status === 'loading' || status === 'pending') || (cstatus === 'pending')}
           >
             <CircularProgress color="inherit" />
           </Backdrop>
