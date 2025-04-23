@@ -11,12 +11,16 @@ import { RootState, useAppDispatch } from './store';
 
 import 'simplebar-react/dist/simplebar.min.css';
 import Details from './components/details';
+import Sidebar from './components/sidebar'
+import ClusteredGrid from './components/clusteredGrid'
 
 function App() {
 
   const dispatch = useAppDispatch();
   const { data } = useSelector((state: RootState) => state.search.records);
   const { status } = useSelector((state: RootState) => state.search);
+  const { status: cstatus } = useSelector((state: RootState) => state.clustered);
+  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { record } = useParams();
 
   useEffect(() => {
@@ -30,15 +34,17 @@ function App() {
         { data &&
           <Slide direction="right" in={data !== null}>
             <Grid2 size={3}>
-              <Results/>
+              <Sidebar>
+                {data && <Results/>}
+              </Sidebar>
             </Grid2>
           </Slide>
         }
         <Grid2 size={!data ? 12 : 9} sx={{position: 'relative'}}>
-          <Map/>
+          {clusteredMode ? <ClusteredGrid /> : <Map/>}
           <Backdrop
             sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}
-            open={status === 'loading' || status === 'pending'}
+            open={(status === 'loading' || status === 'pending') || (cstatus === 'pending')}
           >
             <CircularProgress color="inherit" />
           </Backdrop>

@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { FeatureCollection, Feature } from 'geojson';
 import { RecordSearchRequest, recordSearch, recordSearchResponse } from '../../services/recordsApi';
+import { clusterMembers } from '../../services/clusteredApi';
 import { FilterValuesType } from '../../types';
 import { RootState } from '../../app/store';
 
@@ -62,12 +63,22 @@ export const fetchRecords = createAsyncThunk<
 >('records/search', 
   async (body: RecordSearchRequest, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
+    const { clusteredMode } = state.ui;
 
     const { page } = body;
-    if (page && state.search.cache[page]) {
+    if (!clusteredMode && page && state.search.cache[page]) {
       return rejectWithValue({ usedCache: true, data: state.search.cache[page] });
     }
-    const response = await recordSearch(body);
+    let response;
+    if (clusteredMode) {
+      const { hoveredCluster } = state.clustered;
+      if (hoveredCluster === -1) {
+        return rejectWithValue({ usedCache: true, data: initialRecords });
+      }
+      response = await clusterMembers(hoveredCluster, body);
+    } else {
+      response = await recordSearch(body);
+    }
     return response.data;
   }
 );

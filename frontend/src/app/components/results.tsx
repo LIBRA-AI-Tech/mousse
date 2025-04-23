@@ -1,18 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Paper, Typography } from "@mui/material";
+import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
-import { setCurrentPage } from "../../features/search/searchSlice";
+import { fetchRecords, resetResults, setCurrentPage } from "../../features/search/searchSlice";
+import { Link } from "@mui/material";
 
 export default function Results() {
   const dispatch = useAppDispatch();
   const navigateTo = useNavigate();
 
-  const { data } = useSelector((state: RootState) => state.search.records);
-  const { status, currentPage, pageCount } = useSelector((state: RootState) => state.search);
+  const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
+  const { status, currentPage, pageCount, filterValues, query, features } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
+
+  const [usedLowerThreshold, setUsedLowerThreshold] = useState(false);
 
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
@@ -24,6 +27,10 @@ export default function Results() {
     return finalText;
   };
 
+  const handleLowerThreshold = () => {
+    setUsedLowerThreshold(true);
+  };
+
   useEffect(() => {
     if (hoveredFeature && listItemRefs.current[hoveredFeature]) {
       listItemRefs.current[hoveredFeature]?.scrollIntoView({
@@ -33,13 +40,39 @@ export default function Results() {
     }
   }, [hoveredFeature]);
 
+  useEffect(() => {
+    if (usedLowerThreshold && data) {
+      const { startDate, endDate, phase, ...otherFilters } = filterValues;
+      const filters = {
+        ...otherFilters,
+        country: otherFilters.country.map((c) => c.code),
+        dateRange: {
+          start: startDate?.toISOString().substring(0, 10),
+          end: endDate?.toISOString().substring(0, 10),
+        },
+        epoch: phase.map((p) => p.value),
+      };
+
+      dispatch(resetResults());
+
+      dispatch(fetchRecords({
+        query,
+        page: 1,
+        features,
+        threshold: 0.4,
+        output: 'geojson',
+        ...filters,
+      }));
+
+    }
+  }, [usedLowerThreshold, dispatch, features, filterValues, query, data]);
+
   if (!data)
     return null;
 
   return (
-    <Paper sx={{height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto'}}>
+    <>
       <List sx={(status === 'loading' || status === 'pending') ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
-        <Typography variant="h6" sx={{mx: 2}} color="textSecondary">Results</Typography>
         {data?.features.map((f) => (
           <ListItem
             key={`feature-${f.id}`}
@@ -78,10 +111,24 @@ export default function Results() {
             </ListItemText>
           </ListItem>
         ))}
+        {(page === 1 && !hasMore && !usedLowerThreshold) && (
+          <ListItem sx={{marginBlock: '1rem 2rem'}}>
+            <Typography variant='body2' sx={{fontStyle: 'italic'}}>
+              We can not find many relevant results to your query and filters. If you like,{" "}
+              <Link
+                component='span'
+                variant='body2'
+                onClick={handleLowerThreshold}
+                sx={{cursor: 'pointer'}}
+                >
+                you can repeat the search with a relaxed threshold
+              </Link>.
+            </Typography>
+          </ListItem>
+        )}
       </List>
-      { data.features.length === 0 ?
-        <Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>
-        :
+      {(data.features.length === 0 && usedLowerThreshold) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
+      {data.features.length > 0 && (
         <Pagination
           disabled={status !== 'succeeded'}
           count={pageCount}
@@ -94,7 +141,7 @@ export default function Results() {
           page={currentPage}
           onChange={(_, page) => dispatch(setCurrentPage(page))}
         />
-      }
-    </Paper>
+      )}
+    </>
   );
 }

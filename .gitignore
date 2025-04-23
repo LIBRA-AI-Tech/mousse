@@ -3,7 +3,7 @@ data/*
 !data/CNTR_RG_01M_2024_4326.geojson
 triton/engines/*
 !triton/engines/.gitkeep
-tgi/model/*
+tgi/*
 !tgi/model/.gitkeep
 __pycache__
 *.egg-info

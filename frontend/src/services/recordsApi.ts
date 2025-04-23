@@ -18,6 +18,7 @@ export interface RecordSearchRequest {
   page?: number;
   output?: 'json'|'geojson'
   country?: string[];
+  threshold?: number;
   features?: Feature[];
   dateRange?: DateRange;
   epoch?: PhaseOptionType['value'][];

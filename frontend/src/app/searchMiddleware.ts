@@ -1,6 +1,8 @@
 import { Middleware } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
 import { fetchRecords, submitSearch, setCurrentPage, addLayer, editLayer, deleteLayer } from "../features/search/searchSlice";
+import { toggleMode } from "../features/ui/uiSlice";
+import { setHoveredCluster } from "../features/clusters/clusteredSlice";
 
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (action) => {
@@ -9,7 +11,7 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
   const state = storeAPI.getState();
   const dispatch = storeAPI.dispatch as AppDispatch;
 
-  const matchers = [submitSearch.match, setCurrentPage.match, addLayer.match, editLayer.match, deleteLayer.match];
+  const matchers = [submitSearch.match, setCurrentPage.match, addLayer.match, editLayer.match, deleteLayer.match, toggleMode.match, setHoveredCluster.match];
   if (matchers.some((matcher) => matcher(action))) {
     const { query, filterValues, currentPage: page, features } = state.search;
     const { startDate, endDate, phase, ...otherFilters } = filterValues;
