@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Paper, Typography } from "@mui/material";
+import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
 import { fetchRecords, resetResults, setCurrentPage } from "../../features/search/searchSlice";
@@ -71,9 +71,8 @@ export default function Results() {
     return null;
 
   return (
-    <Paper sx={{height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto'}}>
+    <>
       <List sx={(status === 'loading' || status === 'pending') ? {opacity: 0.5, pointerEvents: 'none'} : {}}>
-        <Typography variant="h6" sx={{mx: 2}} color="textSecondary">Results</Typography>
         {data?.features.map((f) => (
           <ListItem
             key={`feature-${f.id}`}
@@ -127,22 +126,22 @@ export default function Results() {
             </Typography>
           </ListItem>
         )}
-        </List>
-        {(data.features.length === 0 && usedLowerThreshold) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
-        {data.features.length > 0 && (
-          <Pagination
-            disabled={status !== 'succeeded'}
-            count={pageCount}
-            showFirstButton={true}
-            showLastButton={false}
-            hidePrevButton={false}
-            hideNextButton={false}
-            size="small"
-            sx={{pb: 2, display: 'flex', justifyContent: 'center'}}
-            page={currentPage}
-            onChange={(_, page) => dispatch(setCurrentPage(page))}
-          />
-        )}
-    </Paper>
+      </List>
+      {(data.features.length === 0 && usedLowerThreshold) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
+      {data.features.length > 0 && (
+        <Pagination
+          disabled={status !== 'succeeded'}
+          count={pageCount}
+          showFirstButton={true}
+          showLastButton={false}
+          hidePrevButton={false}
+          hideNextButton={false}
+          size="small"
+          sx={{pb: 2, display: 'flex', justifyContent: 'center'}}
+          page={currentPage}
+          onChange={(_, page) => dispatch(setCurrentPage(page))}
+        />
+      )}
+    </>
   );
 }

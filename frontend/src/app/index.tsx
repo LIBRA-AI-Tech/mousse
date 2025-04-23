@@ -30,12 +30,14 @@ function App() {
         { data &&
           <Slide direction="right" in={data !== null}>
             <Grid2 size={3}>
-              <Results/>
+              <Sidebar>
+                {data && <Results/>}
+              </Sidebar>
             </Grid2>
           </Slide>
         }
         <Grid2 size={!data ? 12 : 9} sx={{position: 'relative'}}>
-          <Map/>
+          {clusteredMode ? <ClusteredGrid /> : <Map/>}
           <Backdrop
             sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}
             open={status === 'loading' || status === 'pending'}
