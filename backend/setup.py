@@ -32,6 +32,7 @@ setuptools.setup(
         "tqdm>=4.67.0,<4.68.0",
         "scikit-learn>=1.6.1,<1.7.0",
         "requests>=2.32.0,<2.33.0",
+        "valkey>=6.1.0,<6.2.0",
     ],
     python_requires='>=3.10',
     entry_points = {
