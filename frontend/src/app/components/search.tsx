@@ -7,18 +7,19 @@ import SearchIcon from '@mui/icons-material/Search';
 import TuneIcon from '@mui/icons-material/Tune';
 import FilterBar from './filterBar';
 import { RootState, useAppDispatch } from '../store';
-import { toggleFilterSection } from '../../features/ui/uiSlice';
+import { toggleFilterSection, toggleMode } from '../../features/ui/uiSlice';
 import { resetResults, submitSearch, initiateSearch } from '../../features/search/searchSlice';
 import { ClearIcon } from '@mui/x-date-pickers';
 
 import { analyzeQuery, AnalyzerResponse } from '../../services/analyzerApi';
 import StyledInput from '../../components/styledInput';
 import { FilterValuesType } from '../../types';
+import { resetClusters } from '../../features/clusters/clusteredSlice'
 
 const Search = () => {
 
   const dispatch = useAppDispatch();
-  const { isFilterSectionOpen } = useSelector((state: RootState) => state.ui)
+  const { isFilterSectionOpen, clusteredMode } = useSelector((state: RootState) => state.ui)
   const { status } = useSelector((state: RootState) => state.search);
   const [isFilterToggleButtonPressed, setIsFilterToggleButtonPressed] = useState(false);
   const initialFilterValues: FilterValuesType = useMemo(() => ({
@@ -48,6 +49,8 @@ const Search = () => {
 
   const handleFormSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
+    dispatch(resetClusters());
+    if (clusteredMode) dispatch(toggleMode());
     if (queryAnalysis?.query === query) {
       processFormSubmission();
     } else {

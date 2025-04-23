@@ -38,7 +38,7 @@ const Sidebar = ({children}: SidebarProps) => {
     <Paper sx={loading ? {height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto', position: 'relative', opacity: 0.5, pointerEvents: 'none'} : {height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto', position: 'relative'}}>
       <Grid2 container alignItems='center' justifyContent='space-between' sx={{marginBlock: '.5rem .7rem'}}>
         <Typography variant="h6" sx={{mx: 2}} color="textSecondary">Results</Typography>
-        <FormControlLabel control={<Switch onChange={handleSwitch} />} label="Cluster view" labelPlacement="start" sx={{marginInlineEnd: '.3rem'}} />
+        <FormControlLabel control={<Switch checked={clusteredMode} onChange={handleSwitch} />} label="Cluster view" labelPlacement="start" sx={{marginInlineEnd: '.3rem'}} />
       </Grid2>
       {childrenWrapper(children)}
     </Paper>
