@@ -31,16 +31,18 @@ class DateRange(BaseModel):
     start: date | None = Field(None, description="Starting date of the specified timerange", example="2024-06-01")
     end: date | None = Field(None, description="Ending date of the specified timerange", example="2024-08-31")
 
-class SearchBody(BaseModel):
+class MinimumSearchBody(BaseModel):
     query: str = Field(..., description="The search query string used to identify relevant records.", example="Air pollution")
-    page: PositiveInt = Field(1, description="The page number to retrieve in a paginated search result, starting from 1.")
-    resultsPerPage: PositiveInt = Field(10, description="The number of results to include per page in the response, with a maximum limit of 100.", le=100)
-    threshold: float = Field(0.2, description="A threshold value (between 0 and 1) for filtering or scoring results. Higher values may indicate stricter criteria.", gt=0, lt=1)
-    output: SearchOutput = Field('json', description="Determines the output of the data.")
     country: list[str] | None = Field(None, description="A list of country codes to filter results by geographic region.", example=['FR', 'IT'])
     features: list[FeatureModel] | None = Field(None, description="A list of GeoJSON features used for spatial filtering (**intersection**). These features define geographic boundaries or areas of interest for the search. Ignored if `country` is given.")
     dateRange: DateRange | None = Field(None, description="A date range to filter results based on their temporal attributes.")
     epoch: list[Epoch] | None = Field(None, description="A list of time periods to filter results, including specific months (e.g., '01' for January) or seasons (e.g., 'winter' for the winter season).")
+
+class SearchBody(MinimumSearchBody):
+    page: PositiveInt = Field(1, description="The page number to retrieve in a paginated search result, starting from 1.")
+    resultsPerPage: PositiveInt = Field(10, description="The number of results to include per page in the response, with a maximum limit of 100.", le=100)
+    threshold: float = Field(0.2, description="A threshold value (between 0 and 1) for filtering or scoring results. Higher values may indicate stricter criteria.", gt=0, lt=1)
+    output: SearchOutput = Field('json', description="Determines the output of the data.")
 
 class RecordBase(BaseModel):
     title: str = Field(..., description="The title of the record, summarizing its content or purpose.", example="Lithology of sediment core BACHALP, Bachalpsee, Switzerland")
