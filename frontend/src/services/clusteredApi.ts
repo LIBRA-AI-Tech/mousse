@@ -2,6 +2,7 @@
 import { Dayjs } from "dayjs";
 import { Feature } from "geojson";
 import { API_BASE_URL, ApiResponse, handleResponse } from "./api"
+import { recordSearchResponse, RecordSearchRequest } from "./recordsApi";
 
 export interface Cluster {
   id: number;
@@ -35,4 +36,16 @@ export const clusteredSearch = async (body: ClusteredRequest): Promise<ApiRespon
   });
 
   return handleResponse<ClusteredResponse>(response);
+}
+
+export const clusterMembers = async (cluster_id: number, body: RecordSearchRequest): Promise<ApiResponse<recordSearchResponse>> => {
+  const response = await fetch(`${API_BASE_URL}/clustered/members/cluster/${cluster_id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body),
+  });
+
+  return handleResponse<recordSearchResponse>(response);
 }

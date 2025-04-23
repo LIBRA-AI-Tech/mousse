@@ -1,6 +1,7 @@
 import { Middleware } from "@reduxjs/toolkit";
 import { RootState, AppDispatch } from "./store";
 import { fetchRecords, submitSearch, setCurrentPage, addLayer, editLayer, deleteLayer } from "../features/search/searchSlice";
+import { fetchRecordsByClusterId } from "../features/clusters/clusteredSlice";
 
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (action) => {
@@ -12,6 +13,7 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
   const matchers = [submitSearch.match, setCurrentPage.match, addLayer.match, editLayer.match, deleteLayer.match];
   if (matchers.some((matcher) => matcher(action))) {
     const { query, filterValues, currentPage: page, features } = state.search;
+    const { clusteredMode } = state.ui;
     const { startDate, endDate, phase, ...otherFilters } = filterValues;
     const filters = {
       ...otherFilters,
@@ -23,7 +25,11 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
       epoch: phase.map((p) => p.value),
     }
     if (query !== '') {
-      dispatch(fetchRecords({query, ...filters, page, features, output: 'geojson'}));
+      if (clusteredMode) {
+        dispatch(fetchRecordsByClusterId({query, ...filters, page, features, output: 'geojson'}));
+      } else {
+        dispatch(fetchRecords({query, ...filters, page, features, output: 'geojson'}));
+      }
     }
   }
 
