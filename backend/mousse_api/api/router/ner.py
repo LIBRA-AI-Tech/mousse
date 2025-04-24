@@ -1,11 +1,4 @@
-import os
-import asyncio
-import contextlib
-import httpx
-import json
-import re
 from datetime import date
-from json_repair import repair_json
 from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,9 +8,8 @@ from mousse_api.db.models import Countries
 
 from mousse_api.api.schemata.ner import NERAnalysisResponse, LLMResponse, Entities, TimeRange
 
-class ClientDisconnectedError(Exception):
-    """Custom exception for client disconnections."""
-    pass
+from mousse_api.api.utils.prompts import NER_PROMPT
+from mousse_api.api.utils.llm import llm_request, LLMException
 
 def summarize_schema(schema):
     props= [f"{key}: {item['description']}" for key, item in schema['properties'].items()]
@@ -47,106 +39,7 @@ router = APIRouter(
     prefix="/ner"
 )
 
-SYSTEM_PROMPT = """
-You are a Name-Entity Recognition system specialized in extracting and processing location and date related entities from text. Follow these steps:
-
-1. Extract exact entities from the text:
-   - Location entities: Extract only if they are specific place names (not general terms like "sample locations")
-   - Date entities: Extract dates exactly as they appear in the text
-   Both should be extracted exactly as mentioned in the text, without modifications.
-
-2. For each detected location entity:
-   - Map it to corresponding country name(s)
-   - If the location itself is a country, include it in the country list
-   - If country cannot be determined, return an empty list
-
-3. For date-related entities, classify them into one of two categories:
-   a) Absolute date range:
-      - Convert to ISO 8601 date format (YYYY-MM-DD)
-      - Set periodStart and periodEnd
-      - Set phase to null
-      - Use %(today)s as reference for relative dates
-   
-   b) Recurring yearly period:
-      - Set phase as list of integers (1-12) representing months
-      - Set periodStart and periodEnd to null
-
-4. Clean the query by removing:
-   - Detected date entities and their syntactic relations (e.g., prepositions)
-   - Location entities (only if they are countries) and their relations
-   Return the remaining parts as a list of strings
-
-Return the results in JSON format matching this schema: %(schema)s
-
-IMPORTANT:
-- Always return all fields defined in the schema
-- Return only the JSON without any additional explanation or notes
-- Ensure the JSON is properly formatted and parsable
-""" % {"today": str(date.today()), "schema": summarize_schema(LLMResponse.model_json_schema())}
-
-
-MAX_TOKENS = 128
-
-MAX_REQUESTS = 3
-
-class JSON_NOT_FOUND(Exception):
-    """Raised when the LLM response does not contain a valid JSON"""
-
-async def _chat_completion(query: str, request: Request) -> str:
-    url = "{chat_completion_url}/v1/chat/completions".format(
-        chat_completion_url=os.getenv("CHAT_COMPLETION_URL")
-    )
-    model = os.getenv('LLM_MODEL')
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": query},
-        ],
-        "max_tokens": MAX_TOKENS,
-        "temperature": 0,
-    }
-
-    headers = { 'Content-Type': 'application/json' }
-
-    async with httpx.AsyncClient() as client:
-        task = asyncio.create_task(
-            client.post(url, headers=headers, json=payload, timeout=120)
-        )
-        async def monitor_disconnection():
-            try:
-                while True:
-                    message = await request.receive()
-                    if message['type'] == 'http.disconnect':
-                        break
-                task.cancel()
-            except asyncio.CancelledError:
-                pass
-        disconnect_task = asyncio.create_task(monitor_disconnection())
-
-        try:
-            response = await task
-        except asyncio.CancelledError:
-            raise ClientDisconnectedError("Client disconnected before request completion.")
-        finally:
-            disconnect_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await disconnect_task
-
-        response = response.json()
-
-    try:
-        markdown_string = response['choices'][0]['message']['content']
-    except (KeyError, IndexError, ValueError, TypeError) as e:
-        markdown_string = ""
-
-    return markdown_string
-
-def _extract_json(markdown_string: str) -> str:
-    json_match = re.search(r"```json\n(.*?)\n```", markdown_string, re.DOTALL)
-    if not json_match:
-        raise JSON_NOT_FOUND
-    return json_match.group(1)
+system_prompt = NER_PROMPT % {"today": str(date.today()), "schema": summarize_schema(LLMResponse.model_json_schema())}
 
 @router.get(
     '/analyze',
@@ -173,31 +66,16 @@ the core query text. The endpoint returns structured information for downstream 
 )
 async def ner(request: Request, query: str = Query(..., description="Input text for analysis"), session: AsyncSession = Depends(get_session)):
 
-    success = False
-    retries = 0
-    while not success and retries < MAX_REQUESTS:
-        try:
-            markdown_string = await _chat_completion(query, request)
-        except ClientDisconnectedError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except RuntimeError as e:
-            raise HTTPException(status_code=503, detail=str(e))
-        try:
-            try:
-                json_string = _extract_json(markdown_string)
-            except JSON_NOT_FOUND:
-                safe_json = repair_json(markdown_string)
-            else:
-                safe_json = repair_json(json_string)
-            llm_result = json.loads(safe_json)
-            llm_result = LLMResponse(**llm_result)
-        except Exception as e:
-            retries += 1
-        else:
-            success = True
-    
-    if not success:
-        raise HTTPException(status_code=503, detail="LLM did not return a meaningful response")
+    try:
+        llm_result = await llm_request(
+            query=query,
+            system_prompt=system_prompt,
+            request=request,
+            PydanticModel=LLMResponse,
+            max_requests=3,
+        )
+    except LLMException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
     
     countries = []
     if llm_result.country is not None:

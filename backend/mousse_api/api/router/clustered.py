@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Request
 from sqlalchemy import text, bindparam
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,7 @@ router = APIRouter(
 
 valkey = get_valkey_client()
 
-async def _get_clusters(body: ClusterSearchBody, session: AsyncSession):
+async def _get_clusters(body: ClusterSearchBody, session: AsyncSession, request: Request):
     clusters = get_cached_clusters(valkey, body)
     if not clusters:
         sql = SqlConstuctor(threshold=0.5, results_per_page=1000)
@@ -51,16 +51,16 @@ async def _get_clusters(body: ClusterSearchBody, session: AsyncSession):
         texts = [r['title'] for r in data]
         projections = np.array([json.loads(r['vector']) for r in data])
         scores = [float(r['score']) for r in data]
-        classifier = ClusterClassifier(texts=texts, text_ids=text_ids, projections=projections, scores=scores)
+        classifier = ClusterClassifier(texts=texts, text_ids=text_ids, projections=projections, request=request, scores=scores)
 
-        clusters = classifier.fit(n_clusters=body.numberOfClusters)
+        clusters = await classifier.fit(n_clusters=body.numberOfClusters)
         clusters = [asdict(cluster) for cluster in clusters]
     cache_clustered_results(valkey, query_body=body, clustered_result=clusters)
     return clusters
 
 @router.post('/search', summary="Clustered Search", description="Get clustered search results based on the given query.", response_model=list[ClusterResponse])
-async def clustered_search(body: ClusterSearchBody, session: AsyncSession = Depends(get_session)):
-    clusters = await _get_clusters(body, session)
+async def clustered_search(request: Request, body: ClusterSearchBody, session: AsyncSession = Depends(get_session)):
+    clusters = await _get_clusters(body, session, request)
 
     clusters_reduced = [ClusterResponse(
         id=cluster['id'],
@@ -72,7 +72,7 @@ async def clustered_search(body: ClusterSearchBody, session: AsyncSession = Depe
     return clusters_reduced
 
 @router.post('/members/cluster/{cluster_id}', summary="Clustered Members", description="Get clustered members based on the given cluster ID.", response_model=SearchJSONResponse | SearchGeoJSONResponse)
-async def clustered_members(body: MemberClusterSearchBody, cluster_id: int = Path(..., description="Cluster id", example=1), session: AsyncSession = Depends(get_session)):
+async def clustered_members(request: Request, body: MemberClusterSearchBody, cluster_id: int = Path(..., description="Cluster id", example=1), session: AsyncSession = Depends(get_session)):
     query_body: ClusterSearchBody = ClusterSearchBody(
         query=body.query,
         country=body.country,
@@ -81,7 +81,7 @@ async def clustered_members(body: MemberClusterSearchBody, cluster_id: int = Pat
         epoch=body.epoch,
         numberOfClusters=body.numberOfClusters
     )
-    clusters = await _get_clusters(query_body, session)
+    clusters = await _get_clusters(query_body, session, request)
     cluster = next((c for c in clusters if c['id'] == cluster_id), None)
 
     if not cluster:

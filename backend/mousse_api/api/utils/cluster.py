@@ -1,30 +1,25 @@
-import os
 import json
-import logging
-import requests
 import numpy as np
 
 from collections import defaultdict
 from dataclasses import dataclass, field
 from json_repair import repair_json
 from sklearn.cluster import KMeans
+from pydantic import RootModel, model_validator
 from typing import Dict, List, Optional, Tuple
+from fastapi import Request
+from mousse_api.api.utils.prompts import SUMMARY_INSTRUCTION_BATCHED
+from mousse_api.api.utils.llm import llm_request, LLMException
 
-SUMMARY_INSTRUCTION_BATCHED = """You will be given examples from multiple document clusters. Each cluster starts with 'CLUSTER X:' followed by several examples from that cluster.
+class ClusterTitles(RootModel[Dict[str, str]]):
 
-For each cluster, analyze the examples and provide one single representative title of 5-7 words that captures the common theme or topic.
-
-Format your response as a JSON object with cluster IDs as keys and representative titles as values. For example:
-{
-  "0": "representative title for cluster 0",
-  "1": "representative title for cluster 1"
-}
-
-Ensure all titles are 5-7 words long while remaining descriptive enough to distinguish between different clusters.
-"""
-
-logging.basicConfig(level=logging.INFO)
-
+    @model_validator(mode='before')
+    @classmethod
+    def validate_keys(cls, values):
+        for key in values:
+            if not isinstance(key, str) or not key.isdigit():
+                raise ValueError(f"Key '{key}' is not a digit-only string")
+        return values
 
 @dataclass
 class ClusterElement:
@@ -55,6 +50,7 @@ class ClusterClassifier:
         texts: List[str],
         text_ids: List[str],
         projections: np.ndarray,
+        request: Request,
         scores: Optional[List[float]] = None,
     ) -> None:
         """
@@ -64,6 +60,7 @@ class ClusterClassifier:
             texts: List of text documents to cluster.
             text_ids: List of IDs for the texts. If None, indices will be used.
             scores: List of scores for the texts. If None, all scores will be set to 0.
+            request: FastAPI request object for accessing headers.
             projections: Projected embeddings (e.g., after PCA), shape (n_docs, proj_dim).
         """
         self.summary_instruction = SUMMARY_INSTRUCTION_BATCHED
@@ -72,12 +69,9 @@ class ClusterClassifier:
         self.text_ids = text_ids
         self.scores = scores if scores is not None else [0.0] * len(texts)
         self.projected_embeddings = projections
+        self._request = request
 
-        self.summarization_endpoint = "{chat_completion_url}/v1/chat/completions".format(
-            chat_completion_url=os.getenv("CHAT_COMPLETION_URL")
-        )
-
-    def fit(
+    async def fit(
         self,
         n_clusters: int = 30,
     ) -> List[Cluster]:
@@ -93,7 +87,6 @@ class ClusterClassifier:
         Returns:
             List of Cluster objects
         """
-        logging.info(f"KMeans clustering...")
         cluster_labels, cluster_representatives = self.cluster(
             self.projected_embeddings, n_clusters
         )
@@ -102,8 +95,7 @@ class ClusterClassifier:
         for i, label in enumerate(cluster_labels):
             label2docs[label].append(i)
 
-        logging.info("Summarizing cluster centers...")
-        cluster_summaries = self._generate_summaries(
+        cluster_summaries = await self._generate_summaries(
             cluster_labels=cluster_labels, label2docs=label2docs
         )
 
@@ -130,9 +122,14 @@ class ClusterClassifier:
                 - representative document indices for each cluster
         """
 
-        clustering = KMeans(
-            n_clusters=n_clusters, random_state=42, tol=1e-6, max_iter=1000
-        ).fit(embeddings)
+        try:
+            clustering = KMeans(
+                n_clusters=10, random_state=42, tol=1e-6, max_iter=1000
+            ).fit(embeddings)
+        except ValueError:
+            clustering = KMeans(
+                n_clusters=5, random_state=42, tol=1e-6, max_iter=1000
+            ).fit(embeddings)
 
         labels = clustering.labels_
 
@@ -159,9 +156,7 @@ class ClusterClassifier:
         for label in unique_labels:
 
             cluster_points = self.projected_embeddings[labels == label]
-            cluster_indices = np.where(labels == label)[
-                0
-            ]  # Indices of points in this cluster
+            cluster_indices = np.where(labels == label)[0]  # Indices of points in this cluster
 
             center = np.mean(cluster_points, axis=0)
             distances = np.linalg.norm(cluster_points - center, axis=1)
@@ -222,7 +217,7 @@ class ClusterClassifier:
 
         return clusters
 
-    def _generate_summaries(
+    async def _generate_summaries(
         self,
         cluster_labels: np.ndarray,
         label2docs: Optional[Dict[int, List[int]]] = None,
@@ -250,7 +245,6 @@ class ClusterClassifier:
             batches.append(unique_labels[start_idx:end_idx])
 
         for batch_idx, batch in enumerate(batches):
-            logging.info(f"Processing batch {batch_idx + 1} with clusters: {batch}")
 
             batch_examples = []
             batch_cluster_ids = []
@@ -276,61 +270,22 @@ class ClusterClassifier:
 
             combined_examples = "\n\n====NEXT CLUSTER====\n\n".join(batch_examples)
 
-            logging.info(
-                f"Summarizing batch {batch_idx + 1} with {len(batch)} clusters..."
-            )
-            batch_summaries = self._call_summarization_api(
-                combined_examples, batch_cluster_ids
-            )
+            try:
+                batch_summaries = await llm_request(
+                    query=combined_examples,
+                    system_prompt=self.summary_instruction,
+                    request=self._request,
+                    PydanticModel=ClusterTitles,
+                    max_requests=1,
+                    max_tokens=512,
+                    temperature=0.6,
+                )
+            except LLMException:
+                batch_summaries = {}
 
             cluster_summaries.update(batch_summaries)
 
         return cluster_summaries
-
-    def _call_summarization_api(
-        self, examples: str, cluster_ids: List[int]
-    ) -> Dict[int, str]:
-        """
-        Call the summarization API to generate summaries.
-
-        Args:
-            examples: Formatted examples to summarize.
-            cluster_ids: List of cluster IDs being summarized.
-
-        Returns:
-            Dictionary mapping cluster IDs to their summaries.
-        """
-        json_body = {
-            "messages": [
-                {"role": "system", "content": self.summary_instruction},
-                {"role": "user", "content": examples},
-            ],
-            "max_tokens": 386,
-            "add_generation_prompt": True,
-            "temperature": 0.6,
-        }
-        headers = {"Content-Type": "application/json"}
-
-        try:
-            response = requests.post(
-                self.summarization_endpoint,
-                headers=headers,
-                json=json_body,
-                timeout=60,
-            )
-            response.raise_for_status()
-
-            data = response.json()
-            api_response = data["choices"][0]["message"]["content"]
-
-            logging.info(f"Summary generation: {response.elapsed.total_seconds():.2f}s")
-            logging.info(f"Tokens: {data['usage']['total_tokens']} total")
-
-            return self._parse_batched_response(api_response, cluster_ids)
-
-        except (requests.RequestException, KeyError) as e:
-            logging.error(f"API call failed: {e}")
-            return {}
 
     def _parse_batched_response(
         self, response: str, cluster_ids: List[int]
@@ -352,7 +307,6 @@ class ClusterClassifier:
                 repaired_json = repair_json(response)
                 response_json = json.loads(repaired_json)
             except Exception as e:
-                logging.error(f"Failed to parse API response: {e}")
                 return {}
 
         cluster_summaries = {}
@@ -362,7 +316,6 @@ class ClusterClassifier:
                 if cluster_id in cluster_ids:
                     cluster_summaries[cluster_id] = summary
             except ValueError:
-                logging.error(f"Invalid cluster ID in response: {cluster_id_str}")
                 continue
 
         return cluster_summaries
