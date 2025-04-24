@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
-import { fetchRecords, resetResults, setCurrentPage } from "../../features/search/searchSlice";
+import { fetchRecords, resetSearch, setCurrentPage, setThresholdFlag } from "../../features/search/searchSlice";
 import { Link } from "@mui/material";
 
 export default function Results() {
@@ -12,10 +12,8 @@ export default function Results() {
   const navigateTo = useNavigate();
 
   const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
-  const { status, currentPage, pageCount, filterValues, query, features } = useSelector((state: RootState) => state.search);
+  const { status, currentPage, pageCount, filterValues, query, features, usedLowerThreshold } = useSelector((state: RootState) => state.search);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
-
-  const [usedLowerThreshold, setUsedLowerThreshold] = useState(false);
 
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
@@ -28,7 +26,29 @@ export default function Results() {
   };
 
   const handleLowerThreshold = () => {
-    setUsedLowerThreshold(true);
+    dispatch(setThresholdFlag(true));
+
+    const { startDate, endDate, phase, ...otherFilters } = filterValues;
+    const filters = {
+      ...otherFilters,
+      country: otherFilters.country.map((c) => c.code),
+      dateRange: {
+        start: startDate?.toISOString().substring(0, 10),
+        end: endDate?.toISOString().substring(0, 10),
+      },
+      epoch: phase.map((p) => p.value),
+    };
+
+    dispatch(resetSearch());
+
+    dispatch(fetchRecords({
+      query,
+      page: 1,
+      features,
+      threshold: 0.4,
+      output: 'geojson',
+      ...filters,
+    }));
   };
 
   useEffect(() => {
@@ -39,33 +59,6 @@ export default function Results() {
       });
     }
   }, [hoveredFeature]);
-
-  useEffect(() => {
-    if (usedLowerThreshold && data) {
-      const { startDate, endDate, phase, ...otherFilters } = filterValues;
-      const filters = {
-        ...otherFilters,
-        country: otherFilters.country.map((c) => c.code),
-        dateRange: {
-          start: startDate?.toISOString().substring(0, 10),
-          end: endDate?.toISOString().substring(0, 10),
-        },
-        epoch: phase.map((p) => p.value),
-      };
-
-      dispatch(resetResults());
-
-      dispatch(fetchRecords({
-        query,
-        page: 1,
-        features,
-        threshold: 0.4,
-        output: 'geojson',
-        ...filters,
-      }));
-
-    }
-  }, [usedLowerThreshold, dispatch, features, filterValues, query, data]);
 
   if (!data)
     return null;

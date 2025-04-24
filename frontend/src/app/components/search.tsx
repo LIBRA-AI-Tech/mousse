@@ -8,7 +8,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import FilterBar from './filterBar';
 import { RootState, useAppDispatch } from '../store';
 import { toggleFilterSection, toggleMode } from '../../features/ui/uiSlice';
-import { resetResults, submitSearch, initiateSearch } from '../../features/search/searchSlice';
+import { resetResults, submitSearch, initiateSearch, setThresholdFlag } from '../../features/search/searchSlice';
 import { ClearIcon } from '@mui/x-date-pickers';
 
 import { analyzeQuery, AnalyzerResponse } from '../../services/analyzerApi';
@@ -49,7 +49,10 @@ const Search = () => {
 
   const handleFormSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
+
     dispatch(resetClusters());
+    dispatch(setThresholdFlag(false));
+
     if (clusteredMode) dispatch(toggleMode());
     if (queryAnalysis?.query === query) {
       processFormSubmission();

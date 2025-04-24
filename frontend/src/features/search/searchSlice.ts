@@ -16,6 +16,7 @@ interface Records {
 interface SearchState {
   records: Records;
   query: string;
+  usedLowerThreshold: boolean;
   filterValues: FilterValuesType;
   currentPage: number;
   pageCount: number;
@@ -45,6 +46,7 @@ export const initialFilterValues = {
 
 const initialState: SearchState = {
   records: initialRecords,
+  usedLowerThreshold: false,
   query: '',
   filterValues: initialFilterValues,
   currentPage: 1,
@@ -107,6 +109,14 @@ const searchSlice = createSlice({
       state.status = 'pending';
     },
     resetResults: (state) => Object.assign(state, initialState),
+    resetSearch: (state) => {
+      state.records = initialState.records;
+      state.cache = initialState.cache;
+      state.pageCount = initialState.pageCount;
+    },
+    setThresholdFlag: (state, action: PayloadAction<boolean>) => {
+      state.usedLowerThreshold = action.payload;
+    },
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
@@ -158,6 +168,6 @@ const searchSlice = createSlice({
   }
 });
 
-export const { resetResults, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
+export const { resetResults, resetSearch, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
 
 export default searchSlice.reducer;
