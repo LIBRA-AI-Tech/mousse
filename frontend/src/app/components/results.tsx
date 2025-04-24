@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
+import { Alert, Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
 import { fetchRecords, resetSearch, setCurrentPage, setThresholdFlag } from "../../features/search/searchSlice";
@@ -61,8 +61,14 @@ export default function Results() {
     }
   }, [hoveredFeature]);
 
-  if (!data)
-    return null;
+
+  if (!data && (status !== 'pending' && status !== 'loading')) {
+    return <List>
+      <ListItem>
+        <Alert severity="info" sx={{width: '100%'}}>Please select a cluster</Alert>
+      </ListItem>
+    </List>
+  }
 
   return (
     <>
