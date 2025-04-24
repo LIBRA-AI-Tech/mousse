@@ -13,6 +13,7 @@ export default function Results() {
 
   const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
   const { status, currentPage, pageCount, filterValues, query, features, usedLowerThreshold } = useSelector((state: RootState) => state.search);
+  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
 
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
@@ -104,7 +105,7 @@ export default function Results() {
             </ListItemText>
           </ListItem>
         ))}
-        {(page === 1 && !hasMore && !usedLowerThreshold) && (
+        {(page === 1 && !hasMore && (clusteredMode ? true : !usedLowerThreshold)) && (
           <ListItem sx={{marginBlock: '1rem 2rem'}}>
             <Typography variant='body2' sx={{fontStyle: 'italic'}}>
               We can not find many relevant results to your query and filters. If you like,{" "}
@@ -120,7 +121,7 @@ export default function Results() {
           </ListItem>
         )}
       </List>
-      {(data.features.length === 0 && usedLowerThreshold) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
+      {(data.features.length === 0 && (clusteredMode ? true : usedLowerThreshold)) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
       {data.features.length > 0 && (
         <Pagination
           disabled={status !== 'succeeded'}
