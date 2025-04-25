@@ -28,7 +28,7 @@ export default function FilterBar({values, onChange, onReset}: FilterBarProps) {
 
   const dispatch = useAppDispatch();
   const countryList: CountryType[] = useSelector((state: RootState) => state.countryList.data);
-  const { isDrawOnMapActive } = useSelector((state: RootState) => state.ui);
+  const { isDrawOnMapActive, clusteredMode } = useSelector((state: RootState) => state.ui);
 
   const handleDrawOnMapChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
@@ -40,12 +40,23 @@ export default function FilterBar({values, onChange, onReset}: FilterBarProps) {
 
   return (
     <Box
-      sx={{
+      sx={clusteredMode ? {
+        position: 'absolute',
+        top: 80,
+        left: 0,
+        zIndex: 10,
+        backgroundColor: 'rgba(255,255,255, 0.95)',
+        boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+        borderRadius: '3px',
+        minWidth: '40vw',
+        p: 2
+      } : {
         position: 'absolute',
         top: 80,
         left: 0,
         zIndex: 10,
         backgroundColor: 'rgba(255,255,255,0.8)',
+        borderRadius: '3px',
         minWidth: '40vw',
         p: 2
       }}
@@ -204,7 +215,7 @@ const RenderIcon = ({ value }: { value: string}) => {
 
     case "autumn":
       return <AutumnIcon {...commonProps}/>;
-  
+
     default:
       return null;
   }

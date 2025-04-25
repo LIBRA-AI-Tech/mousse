@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
+import { Alert, Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
-import { fetchRecords, resetResults, setCurrentPage } from "../../features/search/searchSlice";
+import { fetchRecords, resetSearch, setCurrentPage, setThresholdFlag } from "../../features/search/searchSlice";
 import { Link } from "@mui/material";
 
 export default function Results() {
@@ -12,11 +12,12 @@ export default function Results() {
   const navigateTo = useNavigate();
 
   const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
-  const { status, currentPage, pageCount, filterValues, query, features } = useSelector((state: RootState) => state.search);
+  const { status, currentPage, pageCount, filterValues, query, features, usedLowerThreshold } = useSelector((state: RootState) => state.search);
+  const { clusters, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
+  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
 
-  const [usedLowerThreshold, setUsedLowerThreshold] = useState(false);
-
+  const loading = status === 'pending' || status === 'loading';
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
   const truncateText = (text: string): string => {
@@ -28,7 +29,29 @@ export default function Results() {
   };
 
   const handleLowerThreshold = () => {
-    setUsedLowerThreshold(true);
+    dispatch(setThresholdFlag(true));
+
+    const { startDate, endDate, phase, ...otherFilters } = filterValues;
+    const filters = {
+      ...otherFilters,
+      country: otherFilters.country.map((c) => c.code),
+      dateRange: {
+        start: startDate?.toISOString().substring(0, 10),
+        end: endDate?.toISOString().substring(0, 10),
+      },
+      epoch: phase.map((p) => p.value),
+    };
+
+    dispatch(resetSearch());
+
+    dispatch(fetchRecords({
+      query,
+      page: 1,
+      features,
+      threshold: 0.3,
+      output: 'geojson',
+      ...filters,
+    }));
   };
 
   useEffect(() => {
@@ -40,35 +63,21 @@ export default function Results() {
     }
   }, [hoveredFeature]);
 
-  useEffect(() => {
-    if (usedLowerThreshold && data) {
-      const { startDate, endDate, phase, ...otherFilters } = filterValues;
-      const filters = {
-        ...otherFilters,
-        country: otherFilters.country.map((c) => c.code),
-        dateRange: {
-          start: startDate?.toISOString().substring(0, 10),
-          end: endDate?.toISOString().substring(0, 10),
-        },
-        epoch: phase.map((p) => p.value),
-      };
-
-      dispatch(resetResults());
-
-      dispatch(fetchRecords({
-        query,
-        page: 1,
-        features,
-        threshold: 0.4,
-        output: 'geojson',
-        ...filters,
-      }));
-
+  if (clusteredMode) {
+    if (!clusters.length && (!data || data.features.length === 0) && cstatus !== 'pending') {
+      return <List>
+        <Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>
+      </List>
+    } else if (clusters.length && hoveredCluster === -1 && !loading) {
+      return <List>
+      <ListItem>
+        <Alert severity="info" sx={{width: '100%'}}>Please select a cluster</Alert>
+      </ListItem>
+    </List>
     }
-  }, [usedLowerThreshold, dispatch, features, filterValues, query, data]);
+  }
 
-  if (!data)
-    return null;
+  if (!data) return null;
 
   return (
     <>
@@ -111,7 +120,7 @@ export default function Results() {
             </ListItemText>
           </ListItem>
         ))}
-        {(page === 1 && !hasMore && !usedLowerThreshold) && (
+        {((page === 1 && !hasMore) && !loading && (clusteredMode ? false: !usedLowerThreshold)) && (
           <ListItem sx={{marginBlock: '1rem 2rem'}}>
             <Typography variant='body2' sx={{fontStyle: 'italic'}}>
               We can not find many relevant results to your query and filters. If you like,{" "}
@@ -127,7 +136,7 @@ export default function Results() {
           </ListItem>
         )}
       </List>
-      {(data.features.length === 0 && usedLowerThreshold) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
+      {(data.features.length === 0 && (clusteredMode ? true : usedLowerThreshold)) && (<Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>)}
       {data.features.length > 0 && (
         <Pagination
           disabled={status !== 'succeeded'}

@@ -31,16 +31,16 @@ function App() {
     <>
       <Bar/>
       <Grid2 container spacing={0}>
-        { data &&
-          <Slide direction="right" in={data !== null}>
+        { (clusteredMode || data) &&
+          <Slide direction="right" in={clusteredMode || data !== null}>
             <Grid2 size={3}>
               <Sidebar>
-                {data && <Results/>}
+                {(clusteredMode || data) && <Results/>}
               </Sidebar>
             </Grid2>
           </Slide>
         }
-        <Grid2 size={!data ? 12 : 9} sx={{position: 'relative'}}>
+        <Grid2 size={(!clusteredMode && !data) ? 12 : 9} sx={{position: 'relative'}}>
           {clusteredMode ? <ClusteredGrid /> : <Map/>}
           <Backdrop
             sx={(theme) => ({ color: "#fff", zIndex: theme.zIndex.drawer + 1, position: 'absolute' })}

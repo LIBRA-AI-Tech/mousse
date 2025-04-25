@@ -1,5 +1,4 @@
 
-import { Dayjs } from "dayjs";
 import { Feature } from "geojson";
 import { API_BASE_URL, ApiResponse, handleResponse } from "./api"
 import { recordSearchResponse, RecordSearchRequest } from "./recordsApi";
@@ -14,8 +13,8 @@ export interface Cluster {
 export type ClusteredResponse = Cluster[];
 
 type DateRange = {
-  start?: Dayjs | null,
-  end?: Dayjs | null,
+  start?: string | null,
+  end?: string | null,
 }
 
 export interface ClusteredRequest {
