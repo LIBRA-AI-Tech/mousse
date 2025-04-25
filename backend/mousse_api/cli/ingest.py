@@ -154,15 +154,13 @@ def _location_to_geom(location):
         geom = shapely.make_valid(geom)
 
     # Check if any point has a longitude > 180
-    if any(coord[0] > 180 for coord in geom.coords if hasattr(geom, 'coords')):
-        # Define normalization function
+    coords = shapely.get_coordinates(geom)
+    if any(x > 180 for x, y in coords):
         def normalize_lon(x, y, z=None):
             x = ((x + 180) % 360) - 180
             return (x, y) if z is None else (x, y, z)
 
         geom = transform(normalize_lon, geom)
-
-    return geom
 
 def _location_to_wkt(location):
     return WKTElement(_location_to_geom(location).wkt, srid=4326)
