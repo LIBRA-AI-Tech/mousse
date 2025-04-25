@@ -73,7 +73,7 @@ class ClusterClassifier:
 
     async def fit(
         self,
-        n_clusters: int = 30,
+        n_clusters: int = 8,
     ) -> List[Cluster]:
         """
         Fit the cluster classifier on text data.
@@ -124,7 +124,7 @@ class ClusterClassifier:
 
         try:
             clustering = KMeans(
-                n_clusters=10, random_state=42, tol=1e-6, max_iter=1000
+                n_clusters=n_clusters, random_state=42, tol=1e-6, max_iter=1000
             ).fit(embeddings)
         except ValueError:
             clustering = KMeans(
@@ -210,7 +210,7 @@ class ClusterClassifier:
                     id=int(label),
                     representative_id=representative_id,
                     representative_text=representative_text,
-                    summary=cluster_summaries.get(label),
+                    summary=cluster_summaries.get(str(label)),
                     elements=cluster_elements,
                 )
             )
@@ -276,11 +276,12 @@ class ClusterClassifier:
                     system_prompt=self.summary_instruction,
                     request=self._request,
                     PydanticModel=ClusterTitles,
-                    max_requests=1,
-                    max_tokens=512,
+                    max_requests=3,
+                    max_tokens=1024,
                     temperature=0.6,
                 )
-            except LLMException:
+                batch_summaries = batch_summaries.model_dump()
+            except LLMException as e:
                 batch_summaries = {}
 
             cluster_summaries.update(batch_summaries)

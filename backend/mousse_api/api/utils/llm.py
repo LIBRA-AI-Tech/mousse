@@ -106,6 +106,14 @@ async def llm_request(query: str, system_prompt: str, request: Request, Pydantic
             else:
                 safe_json = repair_json(json_string)
             llm_result = json.loads(safe_json)
+            # Handle cases where the LLM returns a list of dictionaries
+            # and we want to convert it to a single dictionary
+            if isinstance(llm_result, list):
+                dict_result = {}
+                for item in llm_result:
+                    if isinstance(item, dict):
+                        dict_result.update(item)
+                llm_result = dict_result
             llm_result = PydanticModel(**llm_result)
         except Exception as e:
             retries += 1
