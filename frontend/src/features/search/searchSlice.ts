@@ -62,7 +62,7 @@ export const fetchRecords = createAsyncThunk<
   recordSearchResponse,
   RecordSearchRequest,
   { rejectValue: FetchRecordsErrorPayload }
->('records/search', 
+>('records/search',
   async (body: RecordSearchRequest, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
     const { clusteredMode } = state.ui;
@@ -113,6 +113,9 @@ const searchSlice = createSlice({
       state.records = initialState.records;
       state.cache = initialState.cache;
       state.pageCount = initialState.pageCount;
+    },
+    clearCache: (state) => {
+      state.cache = initialState.cache;
     },
     setThresholdFlag: (state, action: PayloadAction<boolean>) => {
       state.usedLowerThreshold = action.payload;
@@ -168,6 +171,6 @@ const searchSlice = createSlice({
   }
 });
 
-export const { resetResults, resetSearch, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
+export const { resetResults, resetSearch, clearCache, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
 
 export default searchSlice.reducer;
