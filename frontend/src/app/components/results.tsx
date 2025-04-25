@@ -48,7 +48,7 @@ export default function Results() {
       query,
       page: 1,
       features,
-      threshold: 0.4,
+      threshold: 0.3,
       output: 'geojson',
       ...filters,
     }));
