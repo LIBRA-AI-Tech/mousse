@@ -17,8 +17,11 @@ const clusteredMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (
       query,
       country: country.map(c => c.code),
       features: features,
-      dateRange: { start: startDate, end: endDate },
-      epoch: phase.map(p => p.value)
+      dateRange: {
+        start: startDate?.toISOString().substring(0, 10),
+        end: endDate?.toISOString().substring(0, 10),
+      },
+      epoch: phase.map(p => p.value),
     }
 
     if (query !== '') {
