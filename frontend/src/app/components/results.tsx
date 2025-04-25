@@ -13,9 +13,11 @@ export default function Results() {
 
   const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
   const { status, currentPage, pageCount, filterValues, query, features, usedLowerThreshold } = useSelector((state: RootState) => state.search);
+  const { clusters, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
   const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
 
+  const loading = status === 'pending' || status === 'loading';
   const listItemRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
 
   const truncateText = (text: string): string => {
@@ -61,14 +63,21 @@ export default function Results() {
     }
   }, [hoveredFeature]);
 
-
-  if (!data && (status !== 'pending' && status !== 'loading')) {
-    return <List>
+  if (clusteredMode) {
+    if (!clusters.length && (!data || data.features.length === 0) && cstatus !== 'pending') {
+      return <List>
+        <Typography sx={{textAlign: 'center', m: 4}}>No results.</Typography>
+      </List>
+    } else if (clusters.length && hoveredCluster === -1 && !loading) {
+      return <List>
       <ListItem>
         <Alert severity="info" sx={{width: '100%'}}>Please select a cluster</Alert>
       </ListItem>
     </List>
+    }
   }
+
+  if (!data) return null;
 
   return (
     <>
@@ -111,7 +120,7 @@ export default function Results() {
             </ListItemText>
           </ListItem>
         ))}
-        {(page === 1 && !hasMore && (clusteredMode ? true : !usedLowerThreshold)) && (
+        {((page === 1 && !hasMore) && !loading && (clusteredMode ? false: !usedLowerThreshold)) && (
           <ListItem sx={{marginBlock: '1rem 2rem'}}>
             <Typography variant='body2' sx={{fontStyle: 'italic'}}>
               We can not find many relevant results to your query and filters. If you like,{" "}

@@ -3,7 +3,7 @@ import React from 'react';
 import { RootState, useAppDispatch } from '../store'
 import { useSelector } from 'react-redux'
 import { toggleMode } from '../../features/ui/uiSlice'
-import { initiateClusteredSearch, setHoveredCluster } from '../../features/clusters/clusteredSlice'
+import { initiateClusteredSearch, resetClusters, setHoveredCluster } from '../../features/clusters/clusteredSlice'
 import { clearCache } from '../../features/search/searchSlice'
 
 interface SidebarProps {
@@ -14,20 +14,26 @@ const Sidebar = ({children}: SidebarProps) => {
   const dispatch = useAppDispatch();
   const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { error: cerror, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
-  const { error: serror, status: sstatus} = useSelector((state: RootState) => state.search);
+  const { error: serror, status: sstatus, records: { data } } = useSelector((state: RootState) => state.search);
 
   const loading = cstatus === 'pending' || sstatus === 'pending' || sstatus === 'loading';
 
   const handleSwitch = () => {
+    if (clusteredMode) {
+      dispatch(resetClusters());
+
+      if (data && data.features.length)
+      dispatch(clearCache());
+    }
+
+    dispatch(toggleMode());
+
+    if (!clusteredMode) dispatch(initiateClusteredSearch());
+
     if (hoveredCluster !== -1) {
       dispatch(setHoveredCluster(-1));
     }
 
-    if (clusteredMode) {
-      dispatch(clearCache());
-      dispatch(initiateClusteredSearch());
-    }
-    dispatch(toggleMode());
   }
 
   const childrenWrapper = (children: React.ReactNode) => {
