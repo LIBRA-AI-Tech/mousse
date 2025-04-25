@@ -161,6 +161,8 @@ def _location_to_geom(location):
             return (x, y) if z is None else (x, y, z)
 
         geom = transform(normalize_lon, geom)
+    
+    return geom
 
 def _location_to_wkt(location):
     return WKTElement(_location_to_geom(location).wkt, srid=4326)
