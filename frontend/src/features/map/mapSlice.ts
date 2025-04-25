@@ -13,7 +13,7 @@ const mapSlice = createSlice({
   initialState,
   reducers: {
     setHoveredFeature: (state, action: PayloadAction<mapState['hoveredFeature']>) => {
-      state.hoveredFeature = action.payload;
+      state.hoveredFeature = action.payload === state.hoveredFeature ? null : action.payload;
     }
   }
 });
