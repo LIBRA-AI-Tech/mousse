@@ -265,7 +265,7 @@ class SqlConstuctor():
         stmt = f"""
             WITH {ctes}
             SELECT
-                records.uuid, lower_dim.title_cleaned AS title, records.score, to_json(lower_dim.vector) AS vector
+                records.uuid, records.title, records.score, to_json(lower_dim.vector) AS vector
             FROM records
             JOIN core.lower_dim
             ON core.lower_dim.record_uuid = records.uuid
