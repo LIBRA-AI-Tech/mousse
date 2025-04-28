@@ -119,7 +119,7 @@ const searchSlice = createSlice({
       state.clusteredMode = false;
     },
     resetResults: (state) => Object.assign(state, initialState),
-    clearResults: (state) => {
+    resetPage: (state) => {
       state.pageCount = 1;
       state.currentPage = 1;
     },
@@ -187,6 +187,6 @@ const searchSlice = createSlice({
   }
 });
 
-export const { resetResults, clearResults, clearCache, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch, toggleMode } = searchSlice.actions;
+export const { resetResults, resetPage, clearCache, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch, toggleMode } = searchSlice.actions;
 
 export default searchSlice.reducer;
