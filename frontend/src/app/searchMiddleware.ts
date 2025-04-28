@@ -36,7 +36,7 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
       if (toggleMode.match(action) && clusteredMode) {
         dispatch(fetchClusteredResults({query, ...filters, features}))
       } else {
-        const threshold = (setThresholdFlag.match(action)) ? 0.3 : 0.5;
+        const threshold = (setThresholdFlag.match(action)) ? 0.3 : 0.45;
         dispatch(fetchRecords({query, ...filters, page, features, threshold, output: 'geojson'}));
       }
     }

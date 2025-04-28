@@ -27,7 +27,7 @@ valkey = get_valkey_client()
 async def _get_clusters(body: ClusterSearchBody, session: AsyncSession, request: Request):
     clusters = get_cached_clusters(valkey, body)
     if not clusters:
-        sql = SqlConstuctor(threshold=0.5, results_per_page=1000)
+        sql = SqlConstuctor(threshold=0.45, results_per_page=1000)
         if body.features is not None and len(body.features) > 0:
             sql.add('spatial', body.features)
         elif body.country is not None and len(body.country) > 0:
