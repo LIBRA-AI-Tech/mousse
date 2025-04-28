@@ -1,8 +1,9 @@
-import { Paper, Theme, Tooltip, Typography } from "@mui/material"
-import { Grid } from "@mui/system"
-import { RootState, useAppDispatch } from "../store"
-import { useSelector } from "react-redux"
-import { setHoveredCluster } from "../../features/clusters/clusteredSlice"
+import { Paper, Theme, Tooltip, Typography } from "@mui/material";
+import { Grid } from "@mui/system";
+import { RootState, useAppDispatch } from "../store";
+import { useSelector } from "react-redux";
+import { setHoveredCluster } from "../../features/clusters/clusteredSlice";
+import { resetPage } from "../../features/search/searchSlice";
 
 const ClusteredGrid = () => {
   const dispatch = useAppDispatch();
@@ -17,6 +18,7 @@ const ClusteredGrid = () => {
   }
 
   const handleClusterHover = (id: number) => {
+    dispatch(resetPage());
     dispatch(setHoveredCluster(id));
   }
 
