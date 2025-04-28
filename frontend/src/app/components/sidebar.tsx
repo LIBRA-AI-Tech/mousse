@@ -34,7 +34,7 @@ const Sidebar = ({children}: SidebarProps) => {
           control={
             <Switch
               checked={clusteredMode}
-              disabled={(!hasMore && page===1) || usedLowerThreshold} onChange={handleSwitch}
+              disabled={(!hasMore && page===1 && !clusteredMode) || (usedLowerThreshold)} onChange={handleSwitch}
             />
           }
           label="Cluster view"
