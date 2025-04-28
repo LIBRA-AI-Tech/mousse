@@ -171,13 +171,14 @@ const searchSlice = createSlice({
         state.error = null;
         addToCache(state, action.payload);
         state.records = action.payload;
-        state.pageCount = Math.max(state.pageCount, action.payload.page + Number(action.payload.hasMore))
+        state.pageCount = Math.max(state.pageCount, action.payload.page + Number(action.payload.hasMore));
       })
       .addCase(fetchRecords.rejected, (state, action) => {
         if (action.payload?.skipWithSuccess) {
           state.status = 'succeeded';
           state.error = null;
           state.records = action.payload.data;
+          state.pageCount = Math.max(state.pageCount, state.records.page + Number(state.records.hasMore));
         } else {
           Object.assign(state, initialState);
           state.status = 'failed';
