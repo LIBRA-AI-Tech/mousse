@@ -104,7 +104,27 @@ class ClusterClassifier:
             cluster_representatives=cluster_representatives,
             cluster_summaries=cluster_summaries,
         )
-        return clusters
+        return self._sort_clusters(clusters)
+    
+    def _sort_clusters(
+        self, clusters: List[Cluster], sort_by: str = "score"
+    ) -> List[Cluster]:
+        """
+        Sort clusters based on the specified attribute.
+
+        Args:
+            clusters: List of Cluster objects to sort.
+            sort_by: Attribute to sort by. Can be "score" or "text_id".
+
+        Returns:
+            Sorted list of Cluster objects.
+        """
+        if sort_by == "score":
+            return sorted(clusters, key=lambda c: c.elements[0].score, reverse=True)
+        elif sort_by == "text_id":
+            return sorted(clusters, key=lambda c: c.representative_id)
+        else:
+            raise ValueError(f"Invalid sort_by value: {sort_by}")
 
     def cluster(
         self, embeddings: np.ndarray, n_clusters: int
