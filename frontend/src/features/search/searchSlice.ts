@@ -157,6 +157,8 @@ const searchSlice = createSlice({
       state.features = [];
     },
     toggleMode: (state) => {
+      state.pageCount = 1;
+      state.currentPage = 1;
       state.clusteredMode = !state.clusteredMode;
     },
   },
