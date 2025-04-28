@@ -28,7 +28,7 @@ export default function Results() {
   };
 
   const handleLowerThreshold = () => {
-    dispatch(setThresholdFlag(true));
+    dispatch(setThresholdFlag());
   };
 
   useEffect(() => {
