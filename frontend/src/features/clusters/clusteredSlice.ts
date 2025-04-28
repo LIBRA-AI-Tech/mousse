@@ -29,9 +29,6 @@ const clusteredSlice = createSlice({
   name: 'clusteredSearch',
   initialState: initialState,
   reducers: {
-    initiateClusteredSearch: (state) => {
-      Object.assign(state, {...initialState, status: 'pending'});
-    },
     resetClusters: (state) => {
       Object.assign(state, initialState);
     },
@@ -42,7 +39,7 @@ const clusteredSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchClusteredResults.pending, (state) => {
-        state.status = 'pending';
+        Object.assign(state, {...initialState, status: 'pending', hoveredCluster: -1});
       })
       .addCase(fetchClusteredResults.fulfilled, (state, action) => {
         state.status = 'succeeded';
@@ -54,9 +51,9 @@ const clusteredSlice = createSlice({
         Object.assign(state, initialState);
         state.status = 'failed';
         state.error = action.error.message || "Couldn't fetch clustered results";
-      })
+      });
   }
-})
+});
 
-export const { initiateClusteredSearch, resetClusters, setHoveredCluster } = clusteredSlice.actions;
+export const { resetClusters, setHoveredCluster } = clusteredSlice.actions;
 export default clusteredSlice.reducer;

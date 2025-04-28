@@ -3,8 +3,6 @@ import React from 'react';
 import { RootState, useAppDispatch } from '../store';
 import { useSelector } from 'react-redux';
 import { toggleMode } from '../../features/search/searchSlice';
-import { initiateClusteredSearch, resetClusters, setHoveredCluster } from '../../features/clusters/clusteredSlice';
-import { clearCache } from '../../features/search/searchSlice';
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -12,27 +10,13 @@ interface SidebarProps {
 
 const Sidebar = ({children}: SidebarProps) => {
   const dispatch = useAppDispatch();
-  const { error: cerror, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
-  const { error: serror, status: sstatus, records: { data }, clusteredMode } = useSelector((state: RootState) => state.search);
+  const { error: cerror, status: cstatus } = useSelector((state: RootState) => state.clustered);
+  const { error: serror, status: sstatus, records: { page, hasMore }, clusteredMode } = useSelector((state: RootState) => state.search);
 
   const loading = cstatus === 'pending' || sstatus === 'pending' || sstatus === 'loading';
 
   const handleSwitch = () => {
-    if (clusteredMode) {
-      dispatch(resetClusters());
-
-      if (data && data.features.length)
-        dispatch(clearCache());
-    }
-
     dispatch(toggleMode());
-
-    if (!clusteredMode) dispatch(initiateClusteredSearch());
-
-    if (hoveredCluster !== -1) {
-      dispatch(setHoveredCluster(-1));
-    }
-
   }
 
   const childrenWrapper = (children: React.ReactNode) => {
@@ -46,7 +30,7 @@ const Sidebar = ({children}: SidebarProps) => {
     <Paper sx={loading ? {height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto', position: 'relative', opacity: 0.5, pointerEvents: 'none'} : {height: 'calc(100vh - 100px)', maxHeight: 'calc(100vh - 100px)', overflow: 'auto', position: 'relative'}}>
       <Grid2 container alignItems='center' justifyContent='space-between' sx={{marginBlock: '.5rem .7rem'}}>
         <Typography variant="h6" sx={{mx: 2}} color="textSecondary">Results</Typography>
-        <FormControlLabel control={<Switch checked={clusteredMode} onChange={handleSwitch} />} label="Cluster view" labelPlacement="start" sx={{marginInlineEnd: '.3rem'}} />
+        <FormControlLabel control={<Switch checked={clusteredMode} disabled={!hasMore && page===1} onChange={handleSwitch} />} label="Cluster view" labelPlacement="start" sx={{marginInlineEnd: '.3rem'}} />
       </Grid2>
       {childrenWrapper(children)}
     </Paper>

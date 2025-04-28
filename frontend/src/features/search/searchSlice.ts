@@ -92,6 +92,7 @@ export const fetchRecords = createAsyncThunk<
 
 const initiateNewSearch = (state: SearchState) => {
   state.clusteredMode = false;
+  state.usedLowerThreshold = false;
   state.currentPage = 1;
   state.pageCount = 1;
   state.cache = {};
@@ -115,6 +116,7 @@ const searchSlice = createSlice({
   reducers: {
     initiateSearch: (state) => {
       state.status = 'pending';
+      state.clusteredMode = false;
     },
     resetResults: (state) => Object.assign(state, initialState),
     resetSearch: (state) => {
@@ -125,11 +127,10 @@ const searchSlice = createSlice({
     clearCache: (state) => {
       state.cache = initialState.cache;
     },
-    setThresholdFlag: (state, action: PayloadAction<boolean>) => {
-      state.records = initialState.records;
-      state.cache = initialState.cache;
-      state.pageCount = initialState.pageCount;
-      state.usedLowerThreshold = action.payload;
+    setThresholdFlag: (state) => {
+      state.status = 'pending';
+      initiateNewSearch(state);
+      state.usedLowerThreshold = true;
     },
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;

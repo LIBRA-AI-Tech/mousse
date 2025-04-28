@@ -3,7 +3,6 @@ import { RootState, AppDispatch } from "./store";
 import { fetchRecords, submitSearch, setCurrentPage, addLayer, editLayer, deleteLayer, setThresholdFlag } from "../features/search/searchSlice";
 import { toggleMode } from "../features/search/searchSlice";
 import { fetchClusteredResults, setHoveredCluster } from "../features/clusters/clusteredSlice";
-import { initiateClusteredSearch } from "../features/clusters/clusteredSlice";
 
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (action) => {
@@ -19,11 +18,10 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
     deleteLayer.match,
     toggleMode.match,
     setHoveredCluster.match,
-    initiateClusteredSearch.match,
     setThresholdFlag.match,
   ];
   if (matchers.some((matcher) => matcher(action))) {
-    const { query, filterValues, currentPage: page, features } = state.search;
+    const { query, filterValues, currentPage: page, features, clusteredMode } = state.search;
     const { startDate, endDate, phase, ...otherFilters } = filterValues;
     const filters = {
       ...otherFilters,
@@ -35,10 +33,11 @@ const searchMiddleware: Middleware<{}, RootState> = (storeAPI) => (next) => (act
       epoch: phase.map((p) => p.value),
     }
     if (query !== '') {
-      if (initiateClusteredSearch.match(action)) {
+      if (toggleMode.match(action) && clusteredMode) {
         dispatch(fetchClusteredResults({query, ...filters, features}))
       } else {
-        dispatch(fetchRecords({query, ...filters, page, features, output: 'geojson'}));
+        const threshold = (setThresholdFlag.match(action)) ? 0.3 : 0.5;
+        dispatch(fetchRecords({query, ...filters, page, features, threshold, output: 'geojson'}));
       }
     }
   }
