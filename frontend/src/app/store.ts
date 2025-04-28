@@ -7,7 +7,6 @@ import mapReducer from '../features/map/mapSlice';
 import countryReducer from '../features/country/countrySlice';
 import clusteredReducer from '../features/clusters/clusteredSlice';
 import searchMiddleware from './searchMiddleware';
-import clusteredMiddleware from './clusteredMiddleware';
 
 const rootReducer = combineReducers({
   ui: uiReducer,
@@ -19,7 +18,7 @@ const rootReducer = combineReducers({
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(searchMiddleware).concat(clusteredMiddleware)
+    getDefaultMiddleware().concat(searchMiddleware)
 });
 
 setupListeners(store.dispatch);

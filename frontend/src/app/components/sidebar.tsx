@@ -1,10 +1,10 @@
 import { Alert, FormControlLabel, Grid2, Paper, Switch, Typography } from '@mui/material'
 import React from 'react';
-import { RootState, useAppDispatch } from '../store'
-import { useSelector } from 'react-redux'
-import { toggleMode } from '../../features/ui/uiSlice'
-import { initiateClusteredSearch, resetClusters, setHoveredCluster } from '../../features/clusters/clusteredSlice'
-import { clearCache } from '../../features/search/searchSlice'
+import { RootState, useAppDispatch } from '../store';
+import { useSelector } from 'react-redux';
+import { toggleMode } from '../../features/search/searchSlice';
+import { initiateClusteredSearch, resetClusters, setHoveredCluster } from '../../features/clusters/clusteredSlice';
+import { clearCache } from '../../features/search/searchSlice';
 
 interface SidebarProps {
   children: React.ReactNode;
@@ -12,9 +12,8 @@ interface SidebarProps {
 
 const Sidebar = ({children}: SidebarProps) => {
   const dispatch = useAppDispatch();
-  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { error: cerror, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
-  const { error: serror, status: sstatus, records: { data } } = useSelector((state: RootState) => state.search);
+  const { error: serror, status: sstatus, records: { data }, clusteredMode } = useSelector((state: RootState) => state.search);
 
   const loading = cstatus === 'pending' || sstatus === 'pending' || sstatus === 'loading';
 
@@ -23,7 +22,7 @@ const Sidebar = ({children}: SidebarProps) => {
       dispatch(resetClusters());
 
       if (data && data.features.length)
-      dispatch(clearCache());
+        dispatch(clearCache());
     }
 
     dispatch(toggleMode());

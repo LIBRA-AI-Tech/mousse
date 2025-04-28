@@ -3,7 +3,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface UIState {
   isInfoModalOpen: boolean;
   isResultsSectionVisible: boolean;
-  clusteredMode: boolean;
   isResultsSectionOpen: boolean;
   isFilterSectionOpen: boolean;
   isDrawOnMapActive: boolean
@@ -11,7 +10,6 @@ interface UIState {
 
 const initialState: UIState = {
   isInfoModalOpen: false,
-  clusteredMode: false,
   isResultsSectionVisible: false,
   isResultsSectionOpen: false,
   isFilterSectionOpen: false,
@@ -34,12 +32,9 @@ const uiSlice = createSlice({
     toggleDrawOnMap: (state, action: PayloadAction<boolean>) => {
       state.isDrawOnMapActive = action.payload;
     },
-    toggleMode: (state) => {
-      state.clusteredMode = !state.clusteredMode;
-    },
   },
 });
 
-export const { toggleInfoModal, toggleResultsSection, toggleFilterSection, toggleDrawOnMap, toggleMode } = uiSlice.actions;
+export const { toggleInfoModal, toggleResultsSection, toggleFilterSection, toggleDrawOnMap } = uiSlice.actions;
 
 export default uiSlice.reducer;

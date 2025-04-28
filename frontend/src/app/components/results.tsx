@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Alert, Button, Chip, Grid2, List, ListItem, ListItemText, Pagination, Typography } from "@mui/material";
 import { RootState, useAppDispatch } from "../store";
 import { setHoveredFeature } from "../../features/map/mapSlice";
-import { fetchRecords, resetSearch, setCurrentPage, setThresholdFlag } from "../../features/search/searchSlice";
+import { setCurrentPage, setThresholdFlag } from "../../features/search/searchSlice";
 import { Link } from "@mui/material";
 
 export default function Results() {
@@ -12,9 +12,8 @@ export default function Results() {
   const navigateTo = useNavigate();
 
   const { data, page, hasMore } = useSelector((state: RootState) => state.search.records);
-  const { status, currentPage, pageCount, filterValues, query, features, usedLowerThreshold } = useSelector((state: RootState) => state.search);
+  const { status, currentPage, pageCount, usedLowerThreshold, clusteredMode } = useSelector((state: RootState) => state.search);
   const { clusters, status: cstatus, hoveredCluster } = useSelector((state: RootState) => state.clustered);
-  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { hoveredFeature } = useSelector((state: RootState) => state.map);
 
   const loading = status === 'pending' || status === 'loading';
@@ -30,28 +29,6 @@ export default function Results() {
 
   const handleLowerThreshold = () => {
     dispatch(setThresholdFlag(true));
-
-    const { startDate, endDate, phase, ...otherFilters } = filterValues;
-    const filters = {
-      ...otherFilters,
-      country: otherFilters.country.map((c) => c.code),
-      dateRange: {
-        start: startDate?.toISOString().substring(0, 10),
-        end: endDate?.toISOString().substring(0, 10),
-      },
-      epoch: phase.map((p) => p.value),
-    };
-
-    dispatch(resetSearch());
-
-    dispatch(fetchRecords({
-      query,
-      page: 1,
-      features,
-      threshold: 0.3,
-      output: 'geojson',
-      ...filters,
-    }));
   };
 
   useEffect(() => {

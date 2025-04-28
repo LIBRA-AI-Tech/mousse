@@ -28,7 +28,8 @@ export default function FilterBar({values, onChange, onReset}: FilterBarProps) {
 
   const dispatch = useAppDispatch();
   const countryList: CountryType[] = useSelector((state: RootState) => state.countryList.data);
-  const { isDrawOnMapActive, clusteredMode } = useSelector((state: RootState) => state.ui);
+  const { clusteredMode } = useSelector((state: RootState) => state.search);
+  const { isDrawOnMapActive } = useSelector((state: RootState) => state.ui);
 
   const handleDrawOnMapChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;

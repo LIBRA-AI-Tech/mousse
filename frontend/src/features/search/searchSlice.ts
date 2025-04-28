@@ -24,10 +24,11 @@ interface SearchState {
   status: 'idle' | 'pending' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
   cache: Record<number, Records>;
+  clusteredMode: boolean;
 }
 
 interface FetchRecordsErrorPayload {
-  usedCache: boolean;
+  skipWithSuccess: boolean;
   data: Records;
 }
 
@@ -55,6 +56,7 @@ const initialState: SearchState = {
   status: 'idle',
   error: null,
   cache: {},
+  clusteredMode: false,
 }
 
 // Thunks
@@ -65,17 +67,20 @@ export const fetchRecords = createAsyncThunk<
 >('records/search',
   async (body: RecordSearchRequest, { getState, rejectWithValue }) => {
     const state = getState() as RootState;
-    const { clusteredMode } = state.ui;
+    const { clusteredMode } = state.search;
 
     const { page } = body;
     if (!clusteredMode && page && state.search.cache[page]) {
-      return rejectWithValue({ usedCache: true, data: state.search.cache[page] });
+      return rejectWithValue({ skipWithSuccess: true, data: state.search.cache[page] });
     }
     let response;
     if (clusteredMode) {
       const { hoveredCluster } = state.clustered;
       if (hoveredCluster === -1) {
-        return rejectWithValue({ usedCache: true, data: initialRecords });
+        return rejectWithValue({ 
+          skipWithSuccess: true,
+          data: initialRecords,
+        });
       }
       response = await clusterMembers(hoveredCluster, body);
     } else {
@@ -86,12 +91,15 @@ export const fetchRecords = createAsyncThunk<
 );
 
 const initiateNewSearch = (state: SearchState) => {
+  state.clusteredMode = false;
   state.currentPage = 1;
   state.pageCount = 1;
   state.cache = {};
 }
 
 const addToCache = (state: SearchState, payload: recordSearchResponse) => {
+  // In clustered mode, we don't cache the results
+  if (state.clusteredMode) return;
   const current_cache: Record<number, Records> = Object.entries(state.cache)
     .slice(Math.max(0, Object.keys(state.cache).length - CACHE_SIZE))
     .reduce((obj, [key, value]) => ({
@@ -118,6 +126,9 @@ const searchSlice = createSlice({
       state.cache = initialState.cache;
     },
     setThresholdFlag: (state, action: PayloadAction<boolean>) => {
+      state.records = initialState.records;
+      state.cache = initialState.cache;
+      state.pageCount = initialState.pageCount;
       state.usedLowerThreshold = action.payload;
     },
     setCurrentPage: (state, action: PayloadAction<number>) => {
@@ -144,6 +155,9 @@ const searchSlice = createSlice({
     resetLayer: (state) => {
       state.features = [];
     },
+    toggleMode: (state) => {
+      state.clusteredMode = !state.clusteredMode;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -158,7 +172,7 @@ const searchSlice = createSlice({
         state.pageCount = Math.max(state.pageCount, action.payload.page + Number(action.payload.hasMore))
       })
       .addCase(fetchRecords.rejected, (state, action) => {
-        if (action.payload?.usedCache) {
+        if (action.payload?.skipWithSuccess) {
           state.status = 'succeeded';
           state.error = null;
           state.records = action.payload.data;
@@ -171,6 +185,6 @@ const searchSlice = createSlice({
   }
 });
 
-export const { resetResults, resetSearch, clearCache, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch } = searchSlice.actions;
+export const { resetResults, resetSearch, clearCache, setThresholdFlag, setCurrentPage, submitSearch, addLayer, editLayer, deleteLayer, resetLayer, initiateSearch, toggleMode } = searchSlice.actions;
 
 export default searchSlice.reducer;

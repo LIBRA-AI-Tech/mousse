@@ -30,7 +30,7 @@ const clusteredSlice = createSlice({
   initialState: initialState,
   reducers: {
     initiateClusteredSearch: (state) => {
-      state.status = 'pending';
+      Object.assign(state, {...initialState, status: 'pending'});
     },
     resetClusters: (state) => {
       Object.assign(state, initialState);

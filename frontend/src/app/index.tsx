@@ -18,9 +18,8 @@ function App() {
 
   const dispatch = useAppDispatch();
   const { data } = useSelector((state: RootState) => state.search.records);
-  const { status } = useSelector((state: RootState) => state.search);
+  const { status, clusteredMode } = useSelector((state: RootState) => state.search);
   const { status: cstatus } = useSelector((state: RootState) => state.clustered);
-  const { clusteredMode } = useSelector((state: RootState) => state.ui);
   const { record } = useParams();
 
   useEffect(() => {
