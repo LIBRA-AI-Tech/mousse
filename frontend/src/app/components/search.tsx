@@ -182,8 +182,8 @@ const Search = () => {
     const parts = [...cleanedQuery, ...location, ...dates]
       .filter((substring) => substring !== null)
       .map((substring, index) => ({
-        start: value.indexOf(substring),
-        end: value.indexOf(substring) + substring.length,
+        start: value.toLowerCase().indexOf(substring.toLowerCase()),
+        end: value.toLocaleLowerCase().indexOf(substring.toLowerCase()) + substring.length,
         style: index < cleanedQuery.length ? {color: 'rgba(0,0,0,1)'} : {color: 'rgba(0,0,0,0.5)'},
       }))
       .filter(({start}) => start !== -1);

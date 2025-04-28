@@ -25,7 +25,7 @@ You are a Name-Entity Recognition system specialized in extracting and processin
 4. Clean the query by removing:
    - Detected date entities and their syntactic relations (e.g., prepositions)
    - Location entities (only if they are countries) and their relations
-   Return the remaining parts as a list of strings
+   Return the remaining parts as a list of strings exactly as they appear in the original query, even if they are not grammatically correct.
 
 Return the results in JSON format matching this schema: %(schema)s
 
