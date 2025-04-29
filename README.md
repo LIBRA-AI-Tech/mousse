@@ -24,21 +24,28 @@ A standout feature of the platform is its **automatic detection of the spatial a
 
 Users can manually adjust the detected filters, extending, refining, or removing them as needed.
 
+### Clustering of the Results
+
+When a query returns a large number of results (above a certain threshold), the platform offers a **clustering view** to provide users with a high-level overview. Clustering is performed on a **lower-dimensional projection of the embedding space**, which must currently be precomputed offline and uploaded to the platform.
+
+The system uses the **K-Means algorithm** to group similar results into clusters, chosen for its simplicity and fast execution on large datasets, making ideal for responsive, interactive use. Once clustering is triggered, the resulting clusters -along with the IDs of their member records- are cached in an in-memory store [Valkey](https://valkey.io), enabling fast and interactive exploration of the grouped data. Users can then browse the contents of each cluster, with cluster members presented in a paginated view to support smooth navigation through large result sets.
+
 ## Components
 
 ```mermaid
 architecture-beta
     group api[API]
     group front[Frontend]
-    group llm[TGI] in api
-    group inference[Triton Server] in api
+    group llm[LLM services] in api
+    group cache[Cache] in api
     group db[Database] in api
 
     service postgres(database)[PostgreSQL] in db
     service disk2(disk)[DiskANN] in db
     service server(server)[FastAPI] in api
-    service triton(server) in inference
-    service tgi(server)[HuggingFace] in llm
+    service valkey(server)[ValKey] in cache
+    service triton(server)[NVidia Triton] in llm
+    service tgi(server)[HuggingFace TGI] in llm
 
     service react(internet)[ReactJS] in front
 
@@ -50,6 +57,7 @@ architecture-beta
     postgres:T -- B:server
     tgi:L-- R:server
     disk2:L -- R:postgres
+    valkey:R -- L:server
 ```
 
 The **Mousse** platform consists of multiple interconnected components, each responsible for a specific part of the system's functionality. The architecture follows a **microservices-based approach**, where different services handle API requests, frontend interactions, database operations, and AI-powered processing.
@@ -67,6 +75,8 @@ The **Mousse** platform consists of multiple interconnected components, each res
     - **PostGIS**: Enables **geospatial indexing** for spatial queries.
     - **pgvector**: Supports **semantic searches** using vector embeddings.
     - **DiskANN (Disk-based Approximate Nearest Neighbor)**: Implements efficient **vector search indexing** with SSD-based storage for scalability and hydrid searches.
+
+- **Caching Layer (ValKey)**: An in memory storage is used to enable the user to efficiently browse clustered results pages.
 
 ### Machine Learning & AI Components
 
@@ -88,7 +98,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml build
 
 and
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --remove-orphans
 ```
 
 ### Database migrations
