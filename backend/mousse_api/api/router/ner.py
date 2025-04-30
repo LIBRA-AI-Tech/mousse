@@ -73,6 +73,7 @@ async def ner(request: Request, query: str = Query(..., description="Input text 
             request=request,
             PydanticModel=LLMResponse,
             max_requests=3,
+            max_tokens=384,
         )
     except LLMException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
